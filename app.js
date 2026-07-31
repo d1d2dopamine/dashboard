@@ -95,6 +95,9 @@ const pad = (n) => String(n).padStart(2, "0");
 const iso = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
 const today = () => iso(new Date());
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+// видна в настройках — сразу понятно, свежие ли файлы залиты
+const BUILD = "v7";
 const DAY = 86400000;
 
 function plural(n, one, few, many) {
@@ -1194,6 +1197,15 @@ $("settingsBtn").addEventListener("click", () => {
   $("fBreak").value = state.breakMinutes;
   $("fSound").checked = state.sound;
   $("fRotate").checked = state.rotate;
+
+  // поле токена всегда пустое — сам токен в нём не хранится.
+  // Подсказка показывает, есть ли он на самом деле.
+  $("fToken").value = "";
+  $("fToken").placeholder = Sync.hasToken()
+    ? "токен уже сохранён на этом устройстве"
+    : "ghp_… — токена здесь нет";
+
+  $("buildInfo").textContent = "сборка " + BUILD;
   renderSync(Sync.status());
   $("overlay").classList.remove("hidden");
   $("fLogin").focus();
@@ -1215,6 +1227,17 @@ $("settingsForm").addEventListener("submit", (e) => {
   state.rotate = $("fRotate").checked;
   state.scalarsUpdatedAt = Date.now();
   save();
+
+  // если в поле вставлен токен — «Сохранить» тоже его подключает.
+  // Раньше токен молча пропадал, если не нажать «Подключить».
+  const typed = $("fToken").value.trim();
+  if (typed) {
+    $("fToken").value = "";
+    toast("Подключаю синхронизацию…");
+    Sync.connect(typed)
+      .then(() => toast("Синхронизация включена"))
+      .catch((err) => toast(err.message));
+  }
 
   $("overlay").classList.add("hidden");
   applyTheme();
@@ -1380,3 +1403,28 @@ async function boot() {
 }
 
 boot();
+
+// самопроверка синхронизации — работает и на телефоне, консоль не нужна
+const checkBtn = $("syncCheck"), diagBox = $("syncDiag");
+
+if (checkBtn && diagBox) {
+  checkBtn.addEventListener("click", async () => {
+    diagBox.classList.remove("hidden");
+    diagBox.textContent = "Проверяю…";
+
+    // если sync.js на сервере старый — скажем об этом прямо
+    if (typeof Sync === "undefined" || typeof Sync.diagnose !== "function") {
+      diagBox.textContent =
+        "Файл sync.js старый — в нём ещё нет самопроверки.\n" +
+        "Залей свежий sync.js и обнови страницу.\n" +
+        "Сборка app.js: " + BUILD;
+      return;
+    }
+
+    try {
+      diagBox.textContent = (await Sync.diagnose()) + "\nсборка app.js: " + BUILD;
+    } catch (err) {
+      diagBox.textContent = "Проверка сорвалась: " + err.message;
+    }
+  });
+}
