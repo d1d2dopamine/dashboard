@@ -1,0 +1,19 @@
+{
+  "name": "dashboard",
+  "main": "./worker.js",
+  "compatibility_date": "2026-07-31",
+
+  // Подставь свой ник. Токен сюда НЕ пишем — он задаётся командой:
+  //   npx wrangler secret put GITHUB_TOKEN
+  "vars": {
+    "GITHUB_LOGIN": "YOUR_LOGIN"
+  },
+
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+
+  "observability": { "enabled": true }
+}

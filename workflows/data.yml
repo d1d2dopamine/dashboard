@@ -1,0 +1,53 @@
+# Собирает data.json с полным графиком активности за год.
+# Токен лежит в Secrets репозитория и в код не попадает.
+
+name: Update dashboard data
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # каждый час
+  workflow_dispatch:       # и кнопкой вручную
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch GitHub stats
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          LOGIN: YOUR_LOGIN        # <-- замени на свой ник
+        run: |
+          cat > query.json <<'EOF'
+          {
+            "query": "query($login: String!) { user(login: $login) { login name avatarUrl followers { totalCount } contributionsCollection { contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } } } repositories(first: 100, isFork: false, ownerAffiliations: OWNER, orderBy: {field: PUSHED_AT, direction: DESC}) { totalCount nodes { name url stargazerCount pushedAt primaryLanguage { name color } } } } }",
+            "variables": { "login": "__LOGIN__" }
+          }
+          EOF
+          sed -i "s/__LOGIN__/$LOGIN/" query.json
+
+          curl -sS -X POST https://api.github.com/graphql \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @query.json > data.json
+
+          rm query.json
+
+          # проверяем, что ответ корректный
+          if ! jq -e '.data.user.login' data.json > /dev/null; then
+            echo "GitHub API вернул ошибку:"
+            cat data.json
+            exit 1
+          fi
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git diff --staged --quiet || git commit -m "chore: update dashboard data"
+          git push
