@@ -238,7 +238,7 @@
       <label class="field"><span>Длина короткого старта, минут</span><input type="number" id="fStart" min="1" max="60" placeholder="5"></label>
       <label class="field"><span>Напоминать о перерыве через, минут</span><input type="number" id="fBreak" min="20" max="240" placeholder="90"></label>
 
-      <label class="check-field"><input type="checkbox" id="fSound"><span>Звук при завершении задачи</span></label>
+      <label class="check-field"><input type="checkbox" id="fSound"><span>��вук при завершении задачи</span></label>
       <label class="check-field"><input type="checkbox" id="fRotate"><span>Менять цвет каждую неделю</span></label>
 
       <div class="sync-box">
@@ -252,7 +252,9 @@
           <button type="button" class="btn" id="syncConnect">Подключить</button>
           <button type="button" class="btn btn-ghost" id="syncNow">Синхронизировать</button>
           <button type="button" class="btn btn-ghost" id="syncOff">Отключить</button>
+          <button type="button" class="btn btn-ghost" id="syncCheck">Проверить</button>
         </div>
+        <pre class="sync-diag hidden" id="syncDiag"></pre>
       </div>
 
       <div class="modal-foot">

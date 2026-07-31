@@ -247,6 +247,71 @@ const Sync = (function () {
     loopId = setInterval(() => run(false), 15000);
   }
 
+  /* ---------- самопроверка ----------
+     Консоль на телефоне открыть почти невозможно,
+     поэтому вся диагностика живёт внутри самого сайта. */
+
+  async function diagnose() {
+    const L = [];
+    const add = (k, v) => L.push(k + ": " + v);
+
+    const t = token();
+    const s = get ? get() : {};
+
+    add("устройство", device());
+    add("токен", t ? "есть, …" + t.slice(-4) + " (" + t.length + " симв.)" : "НЕТ");
+    add("хранилище", gistId() || "НЕ ВЫБРАНО");
+    add("сеть", navigator.onLine ? "онлайн" : "оффлайн");
+    add("здесь задач", (s.tasks || []).filter((x) => !x.deleted).length);
+    add("здесь этапов", (s.milestones || []).filter((x) => !x.deleted).length);
+
+    if (!t) {
+      L.push("→ Токена нет. Вставь его выше и нажми «Подключить»");
+      return L.join("\n");
+    }
+
+    try {
+      const me = await api("/user");
+      add("аккаунт", me.login);
+    } catch (err) {
+      add("аккаунт", "ОШИБКА — " + err.message);
+      L.push("→ Токен не работает. Создай новый с правом gist");
+      return L.join("\n");
+    }
+
+    try {
+      const list = await api("/gists?per_page=100");
+      const mine = list.filter((g) => g.files && g.files[FILE]);
+      add("хранилищ на аккаунте", mine.length);
+      mine.forEach((g) => L.push("   • " + g.id + (g.id === gistId() ? "  ← это устройство" : "")));
+
+      if (mine.length > 1) L.push("→ Хранилищ больше одного — устройства могут смотреть в разные");
+      if (gistId() && !mine.some((g) => g.id === gistId())) {
+        L.push("→ Это устройство смотрит в чужое или удалённое хранилище");
+      }
+    } catch (err) {
+      add("список хранилищ", "ОШИБКА — " + err.message);
+      L.push("→ У токена нет права gist");
+    }
+
+    if (gistId()) {
+      try {
+        const g = await api("/gists/" + gistId());
+        const f = g.files && g.files[FILE];
+        const raw = f ? (f.truncated ? await (await fetch(f.raw_url)).text() : f.content) : "";
+        const d = JSON.parse(raw);
+        add("в облаке задач", (d.tasks || []).filter((x) => !x.deleted).length);
+        add("в облаке этапов", (d.milestones || []).filter((x) => !x.deleted).length);
+        add("облако обновлено", new Date(g.updated_at).toLocaleString("ru-RU"));
+      } catch (err) {
+        add("чтение облака", "ОШИБКА — " + err.message);
+      }
+    }
+
+    L.push("статус: " + status.text);
+    return L.join("\n");
+  }
+
   /* ---------- старт ---------- */
 
   function init(opts) {
@@ -271,7 +336,7 @@ const Sync = (function () {
   }
 
   return {
-    init, connect, disconnect, schedule, isOn, device,
+    init, connect, disconnect, schedule, isOn, device, diagnose,
     now: () => run(true),
     status: () => status,
     hasToken: () => !!token()
