@@ -84,6 +84,7 @@ var Lang = (function () {
     "Этап: пробник, олимпиада, подача документов":
       "Milestone: mock exam, olympiad, application",
     "Дата этапа": "Milestone date",
+    "Дата: дд.мм.гггг": "Date: dd.mm.yyyy",
     "Добавить": "Add",
     "Нужны название и дата": "Title and date are both required",
     "Удалить этап": "Delete milestone",
@@ -455,6 +456,10 @@ var Lang = (function () {
   }
 
   function apply() {
+    // браузеру тоже надо знать язык — от него зависят переносы и родные виджеты
+    if (typeof document !== "undefined" && document.documentElement) {
+      document.documentElement.setAttribute("lang", lang === "en" ? "en" : "ru");
+    }
     if (lang !== "en") return;
     walk(document.body);
     title();

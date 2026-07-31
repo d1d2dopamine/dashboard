@@ -113,10 +113,32 @@ const today = () => iso(new Date());
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // видна в настройках — сразу понятно, свежие ли файлы залиты
-const BUILD = "v11";
+const BUILD = "v12";
 
 // даты и часы пишутся на том же языке, что и интерфейс
 const LOC = () => (typeof Lang !== "undefined" ? Lang.locale() : "ru-RU");
+
+// счётчик дней и полоса остатка имеют смысл только при живом этапе
+function msChrome(show) {
+  const c = document.querySelector(".ms-count");
+  const d = document.querySelector(".drain");
+  if (c) c.classList.toggle("hidden", !show);
+  if (d) d.classList.toggle("hidden", !show);
+}
+
+/* Родной плейсхолдер поля даты рисует браузер, и он всегда на языке
+   системы — оттуда и бралось «fmm.гггг» на английском экране.
+   Пока поле пустое, держим его текстовым со своей подсказкой,
+   а по клику превращаем в настоящий календарь. */
+function softDate(el) {
+  if (!el) return;
+  el.type = "text";
+  el.addEventListener("focus", () => {
+    el.type = "date";
+    if (el.showPicker) { try { el.showPicker(); } catch (e) {} }
+  });
+  el.addEventListener("blur", () => { if (!el.value) el.type = "text"; });
+}
 
 // палитра меток устройств — различимы и на светлой, и на тёмной теме
 const DEVICE_COLORS = ["#46A171", "#7C5CE0", "#D5803B", "#2783DE", "#E56458", "#0FA5A5"];
@@ -183,7 +205,7 @@ const CHALLENGES = [
   "Три сессии по пять минут за день — больше ничего не надо",
   "Разбери входящие до нуля",
   "Вернись к тому, что давно не трогал — блок «Забытое» внизу",
-  "Каждой новой задаче — конкретный первый шаг"
+  "Каждой новой задаче — конкретный первый ша��"
 ];
 
 function weekIndex() {
@@ -646,6 +668,7 @@ function renderMilestones() {
 
   if (next) {
     const left = daysBetween(new Date(), next.date + "T00:00:00");
+    msChrome(true);
     $("msTitle").textContent = next.text;
 
     if (left > 0) {
@@ -656,7 +679,7 @@ function renderMilestones() {
       $("msLbl").textContent = "сегодня";
     } else {
       $("msNum").textContent = Math.abs(left);
-      $("msLbl").textContent = plural(left, "��ень назад", "дня назад", "дней назад");
+      $("msLbl").textContent = plural(left, "день назад", "дня назад", "дней назад");
     }
 
     // переводим абстрактные дни в считаемые объекты
@@ -677,6 +700,8 @@ function renderMilestones() {
     $("msUnits").textContent = list.length
       ? "Можно добавить следующий"
       : "Добавь первый этап — близкая точка работает лучше далёкой цели";
+    // пустой счётчик и пустая полоса выглядят как баг — прячем их
+    msChrome(false);
     $("msNum").textContent = "—";
     $("msLbl").textContent = "";
     $("drain").style.width = "0%";
@@ -1324,7 +1349,7 @@ $("msForm").addEventListener("submit", (e) => {
   if (!text || !date) { toast("Нужны название и дата"); return; }
 
   state.milestones.push(touch({ id: uid(), text: text, date: date, created: today(), done: false, deleted: false, dev: Sync.device() }));
-  $("msText").value = ""; $("msDate").value = "";
+  $("msText").value = ""; $("msDate").value = ""; $("msDate").type = "text";
   save();
   renderMilestones(); renderInsights();
 });
@@ -1716,7 +1741,7 @@ function seedDemo() {
   state.tasks = [
     { id: uid(), text: "Разобрать вторую часть пробника", step: "открыть файл с разбором и найти задание 13", energy: "high", estimate: 40, spent: 0, snoozes: 3, done: false, archived: false, snooze: "", created: Date.now() - 3 * DAY, doneAt: 0, updatedAt: Date.now() },
     { id: uid(), text: "Дописать логистику в earth-strategy", step: "открыть supply.ts", energy: "mid", estimate: 30, spent: 0, snoozes: 0, done: false, archived: false, snooze: "", created: Date.now() - 9 * DAY, doneAt: 0, updatedAt: Date.now() },
-    { id: uid(), text: "Отправить заявку на консультацию", step: "найти почту на сайте вуза", energy: "low", estimate: 10, spent: 0, snoozes: 0, done: false, archived: false, snooze: "", created: Date.now() - 1 * DAY, doneAt: 0, updatedAt: Date.now() },
+    { id: uid(), text: "Отправ��ть заявку на консультацию", step: "найти почту на сайте вуза", energy: "low", estimate: 10, spent: 0, snoozes: 0, done: false, archived: false, snooze: "", created: Date.now() - 1 * DAY, doneAt: 0, updatedAt: Date.now() },
     { id: uid(), text: "Прочитать главу про нейросети", step: "", energy: "mid", estimate: 25, spent: 0, snoozes: 0, done: false, archived: false, snooze: "", created: Date.now() - 12 * DAY, doneAt: 0, updatedAt: Date.now() },
     { id: uid(), text: "Решить вариант по стереометрии", step: "", energy: "mid", estimate: 30, spent: 75, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 20 * DAY, doneAt: Date.now() - 18 * DAY, updatedAt: Date.now() },
     { id: uid(), text: "Настроить деплой дашборда", step: "", energy: "mid", estimate: 20, spent: 45, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 16 * DAY, doneAt: Date.now() - 15 * DAY, updatedAt: Date.now() },
@@ -1806,6 +1831,9 @@ if (checkBtn && diagBox) {
     }
   });
 }
+
+// поля даты — со своим переводимым плейсхолдером
+document.querySelectorAll('input[type="date"]').forEach(softDate);
 
 /* Язык. Внутри приложение всегда говорит по-русски, а Lang переводит
    уже готовый экран и всё, что появится позже. */
