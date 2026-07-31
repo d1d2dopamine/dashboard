@@ -117,7 +117,10 @@ const Sync = (function () {
 
   // что уезжает в облако: тема и текущий уровень сил остаются локальными
   function clean(s) {
-    const out = { v: 2, log: s.log || {}, events: s.events || [], scalarsUpdatedAt: s.scalarsUpdatedAt || 0 };
+    const out = {
+      v: 2, log: s.log || {}, events: s.events || [],
+      devices: s.devices || {}, scalarsUpdatedAt: s.scalarsUpdatedAt || 0
+    };
     LISTS.forEach((k) => { out[k] = s[k] || []; });
     SCALARS.forEach((k) => { out[k] = s[k]; });
     return out;
@@ -170,6 +173,26 @@ const Sync = (function () {
     return [...map.values()].sort((a, b) => a.t - b.t).slice(-600);
   }
 
+  // справочник устройств: по каждому побеждает более свежая запись,
+  // чтобы переименование и цвет доезжали на все экраны
+  function mergeDevices(mine, theirs) {
+    const out = {};
+    const ids = new Set([...Object.keys(mine || {}), ...Object.keys(theirs || {})]);
+
+    ids.forEach((id) => {
+      const a = (mine || {})[id];
+      const b = (theirs || {})[id];
+      if (!a) { out[id] = b; return; }
+      if (!b) { out[id] = a; return; }
+      const winner = (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a;
+      out[id] = Object.assign({}, winner, {
+        lastSeen: Math.max(a.lastSeen || 0, b.lastSeen || 0)
+      });
+    });
+
+    return out;
+  }
+
   function merge(mine, theirs) {
     if (!theirs || typeof theirs !== "object") return mine;
 
@@ -178,6 +201,7 @@ const Sync = (function () {
     LISTS.forEach((k) => { out[k] = mergeList(mine[k], theirs[k]); });
     out.log = mergeLog(mine.log, theirs.log);
     out.events = mergeEvents(mine.events, theirs.events);
+    out.devices = mergeDevices(mine.devices, theirs.devices);
 
     if ((theirs.scalarsUpdatedAt || 0) > (mine.scalarsUpdatedAt || 0)) {
       SCALARS.forEach((k) => {
@@ -333,6 +357,16 @@ const Sync = (function () {
     // окно снова в фокусе — самый частый момент, когда ждёшь свежие данные
     window.addEventListener("focus", () => run(false));
     window.addEventListener("pageshow", () => run(false));
+
+    // любое касание страницы тоже тянет свежее, но не чаще раза в 5 секунд —
+    // чтобы кнопку синхронизации не приходилось жать руками
+    let poked = 0;
+    document.addEventListener("pointerdown", () => {
+      const n = Date.now();
+      if (n - poked < 5000) return;
+      poked = n;
+      run(false);
+    }, true);
   }
 
   return {

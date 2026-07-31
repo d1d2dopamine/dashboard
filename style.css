@@ -397,3 +397,44 @@ input:focus,select:focus{border-color:var(--accent);outline:none}
   #tEstimate { width: 100%; }
   .sync-line { flex-direction: column; align-items: flex-start; gap: 2px; }
 }
+
+/* метки устройств */
+.dev-dot {
+  flex: 0 0 auto;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 2px;
+  background: var(--border);
+}
+.dev-dot.unknown { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
+.dev-dot.big { width: 12px; height: 12px; margin-right: 4px; }
+
+.dev-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.dev-row:last-child { border-bottom: 0; }
+
+.dev-name {
+  flex: 1 1 120px;
+  min-width: 100px;
+  padding: 6px 9px;
+  font: inherit; font-size: 14px;
+  color: var(--text);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.dev-colors { display: flex; gap: 5px; }
+.dev-swatch {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0; cursor: pointer;
+}
+.dev-swatch.on { border-color: var(--text); }
+
+.dev-meta { flex: 0 0 auto; }

@@ -24,6 +24,7 @@ const DEFAULTS = {
   tasks: [],
   inbox: [],
   events: [],            // журнал для наблюдений: { t, hour, kind, minutes, dev }
+  devices: {},           // devices["d7x2"] = { name: "Телефон", color: "#7C5CE0", lastSeen }
   scalarsUpdatedAt: 0,   // когда менялись настройки — нужно для синхронизации
   log: {}                // log["2026-07-31"]["d7x2"] = { minutes: 40, tasks: ["..."] }
 };
@@ -97,7 +98,10 @@ const today = () => iso(new Date());
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // видна в настройках — сразу понятно, свежие ли файлы залиты
-const BUILD = "v7";
+const BUILD = "v8";
+
+// палитра меток устройств — различимы и на светлой, и на тёмной теме
+const DEVICE_COLORS = ["#46A171", "#7C5CE0", "#D5803B", "#2783DE", "#E56458", "#0FA5A5"];
 const DAY = 86400000;
 
 function plural(n, one, few, many) {
@@ -433,7 +437,7 @@ function renderNow() {
 }
 
 /* ============================================================
-   ТАЙМЕР И ЗАЩИТА ОТ ГИПЕРФОКУСА
+   ТАЙМЕР И ЗАЩИТА ОТ ГИПЕР��ОКУСА
    ============================================================ */
 
 const RING = 213.6;
@@ -676,7 +680,7 @@ function renderMilestones() {
       save(); renderMilestones(); renderInsights();
     });
 
-    li.append(cb, label, when, del);
+    li.append(cb, devDot(m.dev), label, when, del);
     ul.appendChild(li);
   });
 }
@@ -719,7 +723,7 @@ function renderInbox() {
       save(); renderInbox();
     });
 
-    li.append(t, toTask, del);
+    li.append(devDot(item.dev), t, toTask, del);
     ul.appendChild(li);
   });
 }
@@ -733,7 +737,7 @@ function addTask(text, step, energy, estimate) {
     id: uid(), text: text, step: step || "", energy: energy || "mid",
     estimate: estimate || 0, spent: 0, snoozes: 0,
     done: false, archived: false, deleted: false,
-    snooze: "", created: Date.now(), doneAt: 0
+    snooze: "", created: Date.now(), doneAt: 0, dev: Sync.device()
   }));
 }
 
@@ -818,7 +822,7 @@ function renderTasks() {
       save(); renderTasks(); renderNow(); renderForgotten(); renderInsights();
     });
 
-    li.append(cb, body, del);
+    li.append(cb, devDot(task.dev), body, del);
     ul.appendChild(li);
   });
 
@@ -1101,7 +1105,7 @@ $("captureForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const text = $("captureInput").value.trim();
   if (text) {
-    state.inbox.push(touch({ id: uid(), text: text, created: Date.now(), deleted: false }));
+    state.inbox.push(touch({ id: uid(), text: text, created: Date.now(), deleted: false, dev: Sync.device() }));
     save();
     renderInbox();
     blip(false);
@@ -1148,7 +1152,7 @@ $("msForm").addEventListener("submit", (e) => {
   const date = $("msDate").value;
   if (!text || !date) { toast("Нужны название и дата"); return; }
 
-  state.milestones.push(touch({ id: uid(), text: text, date: date, created: today(), done: false, deleted: false }));
+  state.milestones.push(touch({ id: uid(), text: text, date: date, created: today(), done: false, deleted: false, dev: Sync.device() }));
   $("msText").value = ""; $("msDate").value = "";
   save();
   renderMilestones(); renderInsights();
@@ -1206,6 +1210,7 @@ $("settingsBtn").addEventListener("click", () => {
     : "ghp_… — токена здесь нет";
 
   $("buildInfo").textContent = "сборка " + BUILD;
+  renderDevices();
   renderSync(Sync.status());
   $("overlay").classList.remove("hidden");
   $("fLogin").focus();
@@ -1257,6 +1262,124 @@ $("resetBtn").addEventListener("click", () => {
 
 /* --- синхронизация --- */
 
+/* --- устройства и их цвета --- */
+
+function guessDeviceName() {
+  const ua = navigator.userAgent || "";
+  if (/iPad|Tablet/i.test(ua)) return "Планшет";
+  if (/Mobi|Android|iPhone/i.test(ua)) return "Телефон";
+  return "Компьютер";
+}
+
+// каждое устройство при запуске отмечается в справочнике и берёт свободный цвет
+function registerDevice() {
+  const id = Sync.device();
+  if (!state.devices) state.devices = {};
+
+  const taken = Object.keys(state.devices)
+    .filter((k) => k !== id)
+    .map((k) => state.devices[k].color);
+
+  const rec = state.devices[id] || {
+    name: guessDeviceName(),
+    color: DEVICE_COLORS.find((c) => !taken.includes(c)) || DEVICE_COLORS[0],
+    updatedAt: Date.now()
+  };
+
+  rec.lastSeen = Date.now();
+  state.devices[id] = rec;
+  persist();
+}
+
+function devRec(devId) {
+  return (state.devices || {})[devId] || null;
+}
+
+// точка слева от записи: сразу видно, где её добавили
+function devDot(devId) {
+  const dot = document.createElement("span");
+  dot.className = "dev-dot";
+
+  const rec = devRec(devId);
+  if (rec) {
+    dot.style.background = rec.color;
+    dot.title = "добавлено здесь: " + rec.name;
+  } else {
+    dot.classList.add("unknown");
+    dot.title = "устройство неизвестно — запись старее меток";
+  }
+
+  return dot;
+}
+
+function renderDevices() {
+  const box = $("deviceList");
+  if (!box) return;
+
+  box.innerHTML = "";
+  const me = Sync.device();
+  const ids = Object.keys(state.devices || {})
+    .sort((a, b) => (state.devices[b].lastSeen || 0) - (state.devices[a].lastSeen || 0));
+
+  if (!ids.length) {
+    box.innerHTML = '<p class="muted small">Пока ни одного</p>';
+    return;
+  }
+
+  ids.forEach((id) => {
+    const rec = state.devices[id];
+
+    const row = document.createElement("div");
+    row.className = "dev-row";
+
+    const dot = document.createElement("span");
+    dot.className = "dev-dot big";
+    dot.style.background = rec.color;
+
+    const name = document.createElement("input");
+    name.type = "text";
+    name.className = "dev-name";
+    name.value = rec.name;
+    name.addEventListener("change", () => {
+      rec.name = name.value.trim() || "Устройство";
+      rec.updatedAt = Date.now();
+      save(); redrawLists();
+    });
+
+    const colors = document.createElement("div");
+    colors.className = "dev-colors";
+
+    DEVICE_COLORS.forEach((c) => {
+      const sw = document.createElement("button");
+      sw.type = "button";
+      sw.className = "dev-swatch" + (c === rec.color ? " on" : "");
+      sw.style.background = c;
+      sw.setAttribute("aria-label", "Цвет метки");
+      sw.addEventListener("click", () => {
+        rec.color = c;
+        rec.updatedAt = Date.now();
+        save(); renderDevices(); redrawLists();
+      });
+      colors.appendChild(sw);
+    });
+
+    const meta = document.createElement("span");
+    meta.className = "muted small dev-meta";
+    meta.textContent = id === me
+      ? "это устройство"
+      : "было видно " + new Date(rec.lastSeen || 0).toLocaleDateString("ru-RU");
+
+    row.append(dot, name, colors, meta);
+    box.appendChild(row);
+  });
+}
+
+function redrawLists() {
+  renderTasks(); renderMilestones(); renderInbox();
+}
+
+/* --- статус синхронизации --- */
+
 function renderSync(st) {
   const btn = $("syncBtn"), label = $("syncStatus");
   if (btn) btn.className = "icon-btn sync-btn " + st.state;
@@ -1282,6 +1405,7 @@ function applyRemote(merged) {
 
   renderNow(); renderToday(); renderRhythm(); renderMilestones();
   renderInbox(); renderTasks(); renderForgotten(); renderInsights();
+  renderDevices();
 }
 
 Sync.init({
@@ -1342,7 +1466,7 @@ function seedDemo() {
     { id: uid(), text: "Отправить заявку на консультацию", step: "найти почту на сайте вуза", energy: "low", estimate: 10, spent: 0, snoozes: 0, done: false, archived: false, snooze: "", created: Date.now() - 1 * DAY, doneAt: 0, updatedAt: Date.now() },
     { id: uid(), text: "Прочитать главу про нейросети", step: "", energy: "mid", estimate: 25, spent: 0, snoozes: 0, done: false, archived: false, snooze: "", created: Date.now() - 12 * DAY, doneAt: 0, updatedAt: Date.now() },
     { id: uid(), text: "Решить вариант по стереометрии", step: "", energy: "mid", estimate: 30, spent: 75, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 20 * DAY, doneAt: Date.now() - 18 * DAY, updatedAt: Date.now() },
-    { id: uid(), text: "Настроить деплой дашборда", step: "", energy: "mid", estimate: 20, spent: 45, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 16 * DAY, doneAt: Date.now() - 15 * DAY, updatedAt: Date.now() },
+    { id: uid(), text: "Настроит�� деплой дашборда", step: "", energy: "mid", estimate: 20, spent: 45, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 16 * DAY, doneAt: Date.now() - 15 * DAY, updatedAt: Date.now() },
     { id: uid(), text: "Разобрать конспект по физике", step: "", energy: "low", estimate: 15, spent: 25, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 11 * DAY, doneAt: Date.now() - 10 * DAY, updatedAt: Date.now() },
     { id: uid(), text: "Повторить тригонометрию", step: "", energy: "mid", estimate: 20, spent: 50, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 6 * DAY, doneAt: Date.now() - 5 * DAY, updatedAt: Date.now() }
   ];
@@ -1364,6 +1488,7 @@ function seedDemo() {
 
 async function boot() {
   seedDemo();
+  registerDevice();
   autoArchive();
   applyTheme();
   resetRing();
