@@ -16,8 +16,8 @@
   --text:        #c7d5e0;
   --bright:      #ffffff;
   --muted:       #8f98a0;
-  --accent:      #66c0f4 !important;
-  --accent-soft: rgba(102, 192, 244, .13);
+  --accent:      #66c0f4;
+  --accent-soft: rgba(102, 192, 244, .14);
   --green:       #a4d007;
   --orange:      #d9a441;
   --red:         #d94126;
@@ -104,6 +104,23 @@ code {
   align-items: center;
   justify-content: center;
   text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+  position: relative;
+  overflow: hidden;
+}
+
+/* аватарка с GitHub: видна, но чуть приглушена и вжата в рамку */
+.avatar.has-img {
+  background: var(--pic) center / cover no-repeat, #16202d !important;
+  filter: saturate(.85) brightness(.9);
+}
+
+.avatar.has-img::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1),
+              inset 0 0 0 1px rgba(0, 0, 0, .5);
+  pointer-events: none;
 }
 
 .ident-text h1 {

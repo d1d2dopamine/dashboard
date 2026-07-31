@@ -268,11 +268,36 @@ var Lang = (function () {
     "в облаке задач": "tasks in the cloud",
     "в облаке этапов": "milestones in the cloud",
     "здесь задач": "tasks here",
-    "здесь этапов": "milestones here"
+    "здесь этапов": "milestones here",
+
+    "Синхронизация выключена": "Sync is off",
+    "Выключена": "Off",
+    "Только на этом устройстве": "This device only",
+    "Ищу хранилище…": "Looking for the storage…",
+    "Синхронизация…": "Syncing…",
+    "Оффлайн — сохранено на устройстве": "Offline — saved on this device"
   };
 
   /* --- фразы с числами и хвостами --- */
   function pl(n, one, many) { return n + " " + (n === 1 ? one : many); }
+
+  // единицы внутри хвостов, которые регулярка забрала целиком
+  function units(s) {
+    return String(s)
+      .replace(/(\d+) (?:календарный день|календарных дня|календарных дней)/g,
+        function (a, n) { return pl(+n, "calendar day", "calendar days"); })
+      .replace(/(\d+) (?:рабочий день|рабочего дня|рабочих дней)/g,
+        function (a, n) { return pl(+n, "working day", "working days"); })
+      .replace(/(\d+) (?:минуту|минуты|минут)/g,
+        function (a, n) { return pl(+n, "minute", "minutes"); })
+      .replace(/(\d+) мин(?![а-я])/g, "$1 min")
+      .replace(/(\d+) (?:день|дня|дней)/g,
+        function (a, n) { return pl(+n, "day", "days"); })
+      .replace(/(\d+) (?:задача|задачи|задач)/g,
+        function (a, n) { return pl(+n, "task", "tasks"); })
+      .replace(/(\d+) (?:выходные|выходных)/g,
+        function (a, n) { return pl(+n, "weekend", "weekends"); });
+  }
 
   var RX = [
     [/^Первый шаг: (.+)$/, function (m) { return "First step: " + m[1]; }],
@@ -280,7 +305,7 @@ var Lang = (function () {
       return "You can quit after " + pl(+m[1], "minute", "minutes") + ". That is allowed.";
     }],
     [/^Ты в работе (.+) подряд\. Встань, пройдись, попей воды\.$/, function (m) {
-      return "You have been at it for " + m[1] + " straight. Stand up, walk, drink water.";
+      return "You have been at it for " + units(m[1]) + " straight. Stand up, walk, drink water.";
     }],
     [/^(\d+) активн\S+ (день|дня|дней)$/, function (m) {
       return pl(+m[1], "active day", "active days");
@@ -292,7 +317,7 @@ var Lang = (function () {
     [/^(\d+) (день|дня|дней) назад$/, function (m) {
       return pl(+m[1], "day", "days") + " ago";
     }],
-    [/^до (.+)$/, function (m) { return "until " + m[1]; }],
+    [/^до (.+)$/, function (m) { return "until " + units(m[1]); }],
     [/^отложено до (.+)$/, function (m) { return "postponed until " + m[1]; }],
     [/^Вернётся (.+)$/, function (m) { return "Comes back " + m[1]; }],
     [/^оценка (\d+) мин · по опыту выйдет (\d+)$/, function (m) {
@@ -300,8 +325,10 @@ var Lang = (function () {
     }],
     [/^оценка (\d+) мин$/, function (m) { return "estimate " + m[1] + " min"; }],
     [/^ещё (\d+)$/, function (m) { return m[1] + " more"; }],
-    [/^вложено (.+)$/, function (m) { return "invested " + m[1]; }],
-    [/^добавлено здесь: (.+)$/, function (m) { return "added here: " + m[1]; }],
+    [/^вложено (.+)$/, function (m) { return "invested " + units(m[1]); }],
+    [/^добавлено здесь: (.+)$/, function (m) {
+      return "added here: " + (MAP[m[1]] || m[1]);
+    }],
     [/^было видно (.+)$/, function (m) { return "last seen " + m[1]; }],
     [/^сборка (.+)$/, function (m) { return "build " + m[1]; }],
     [/^Синхронизировано (.+)$/, function (m) { return "Synced " + m[1]; }],
@@ -317,7 +344,7 @@ var Lang = (function () {
         return "This week: " + pl(+m[1], "minute", "minutes") + " focused, " +
           pl(+m[2], "task", "tasks") + " closed";
       }],
-    [/^Записей всего (\d+) — чем больше, тем точнее остальные наблюдения$/, function (m) {
+    [/^Записей всего (\d+) — чем больше, тем точнее ��стальные наблюдения$/, function (m) {
       return m[1] + " entries so far — the more there are, the sharper the rest of the observations";
     }],
     [/^Чаще всего ты работаешь между (.+) и (.+)$/, function (m) {
@@ -330,13 +357,13 @@ var Lang = (function () {
       return "Just multiply your own estimate by " + m[1];
     }],
     [/^Обычный заход в работу — (.+)$/, function (m) {
-      return "A typical run at work is " + m[1];
+      return "A typical run at work is " + units(m[1]);
     }],
     [/^Планировать блоками по (.+) честнее, чем по часу$/, function (m) {
-      return "Planning in blocks of " + m[1] + " is more honest than hour-long ones";
+      return "Planning in blocks of " + units(m[1]) + " is more honest than hour-long ones";
     }],
     [/^До этапа (.+), но по твоему ритму это около (.+)$/, function (m) {
-      return m[1] + " until the milestone, but at your rhythm that is about " + m[2];
+      return units(m[1]) + " until the milestone, but at your rhythm that is about " + units(m[2]);
     }],
     [/^По (.+) откладывал\S* (.+) три раза и больше$/, function (m) {
       return m[1] + " postponed three times or more";
@@ -348,7 +375,36 @@ var Lang = (function () {
     [/^Проверка сорвалась: (.+)$/, function (m) { return "The check failed: " + m[1]; }],
     [/^Заменить всё на этом устройстве содержимым файла\? В нём задач: (\d+)$/, function (m) {
       return "Replace everything on this device with the file? It holds " + m[1] + " tasks";
-    }]
+    }],
+
+    /* --- склейки, которые раньше оставались по-русски --- */
+
+    // челлендж недели: переводим и префикс, и сам текст
+    [/^На эту неделю: (.+)$/, function (m) {
+      return "This week: " + (MAP[m[1]] || m[1]);
+    }],
+    [/^Ближайший этап · (.+)$/, function (m) { return "Next milestone · " + m[1]; }],
+    [/^это примерно (\d+) (выходные|выходных) · до (.+)$/, function (m) {
+      return "about " + pl(+m[1], "weekend", "weekends") + " · until " + m[3];
+    }],
+    [/^· (\d+) активн\S+ (день|дня|дней)$/, function (m) {
+      return "· " + pl(+m[1], "active day", "active days");
+    }],
+    [/^✓ (.+)$/, function (m) { return "✓ " + (MAP[m[1]] || m[1]); }],
+    [/^★ (\d+)$/, function (m) { return "★ " + m[1]; }],
+    [/^(\S+) · (\d+) (день|дня|дней)$/, function (m) {
+      return (MAP[m[1]] || m[1]) + " · " + pl(+m[2], "day", "days");
+    }],
+    [/^По твоей истории реальное время — примерно оценка × (.+)$/, function (m) {
+      return "Going by your history, real time is roughly estimate × " + m[1].replace(",", ".");
+    }],
+    [/^Сборка app\.js: (.+)$/i, function (m) { return "app.js build: " + m[1]; }],
+    [/^GitHub: (.+)$/, function (m) { return "GitHub: " + (MAP[m[1]] || m[1]); }],
+    [/^есть, …(\S+) \((\d+) симв\.\)$/, function (m) {
+      return "yes, …" + m[1] + " (" + m[2] + " chars)";
+    }],
+    [/^статус: (.+)$/, function (m) { return "status: " + (MAP[m[1]] || m[1]); }],
+    [/^ОШИБКА — (.+)$/, function (m) { return "ERROR — " + (MAP[m[1]] || m[1]); }]
   ];
 
   function one(raw) {
@@ -424,6 +480,9 @@ var Lang = (function () {
 
   function get() { return lang; }
 
+  // даты и часы тоже должны говорить на выбранном языке
+  function locale() { return lang === "en" ? "en-GB" : "ru-RU"; }
+
   function set(l) {
     if (l !== "ru" && l !== "en") return;
     if (l === lang) return;
@@ -431,5 +490,5 @@ var Lang = (function () {
     location.reload();
   }
 
-  return { get: get, set: set, apply: apply, observe: observe, walk: walk, tr: one };
+  return { get: get, set: set, locale: locale, apply: apply, observe: observe, walk: walk, tr: one };
 })();

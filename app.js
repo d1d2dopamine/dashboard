@@ -14,7 +14,7 @@ const KEY = "dashboard.v2";
 const DEFAULTS = {
   login: "",
   university: "",
-  theme: "light",
+  theme: "dark",       // облик один, тёмный — поле оставлено ради старых сохранёнок
   sound: true,
   rotate: true,
   startMinutes: 5,
@@ -113,7 +113,10 @@ const today = () => iso(new Date());
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // видна в настройках — сразу понятно, свежие ли файлы залиты
-const BUILD = "v10";
+const BUILD = "v11";
+
+// даты и часы пишутся на том же языке, что и интерфейс
+const LOC = () => (typeof Lang !== "undefined" ? Lang.locale() : "ru-RU");
 
 // палитра меток устройств — различимы и на светлой, и на тёмной теме
 const DEVICE_COLORS = ["#46A171", "#7C5CE0", "#D5803B", "#2783DE", "#E56458", "#0FA5A5"];
@@ -133,7 +136,7 @@ function daysBetween(from, to) {
 }
 
 function fmtDate(str) {
-  return new Date(str + "T00:00:00").toLocaleDateString("ru-RU", {
+  return new Date(str + "T00:00:00").toLocaleDateString(LOC(), {
     day: "numeric", month: "long", year: "numeric"
   });
 }
@@ -165,14 +168,11 @@ function dayTotals(key) {
    НОВИЗНА: цвет и челлендж меняются каждую неделю
    ============================================================ */
 
-const ACCENTS_LIGHT = [
-  ["#2783DE", "#E5F2FC"], ["#46A171", "#E8F1EC"], ["#D5803B", "#FBEBDE"],
-  ["#7C6BD6", "#EEEAFB"], ["#C2557E", "#FBE8EF"], ["#2E9AA8", "#E3F3F5"]
-];
-const ACCENTS_DARK = [
-  ["#5E9FE8", "rgba(94,159,232,.13)"], ["#72BC8F", "rgba(114,188,143,.13)"],
-  ["#DE9255", "rgba(222,146,85,.13)"], ["#A08CF0", "rgba(160,140,240,.13)"],
-  ["#DF84A8", "rgba(223,132,168,.13)"], ["#4FB9C9", "rgba(79,185,201,.13)"]
+// акценты подобраны под синий корпус: ни один не светится в глаза
+const ACCENTS = [
+  ["#66C0F4", "rgba(102,192,244,.14)"], ["#8FBF4A", "rgba(143,191,74,.14)"],
+  ["#D9A441", "rgba(217,164,65,.14)"], ["#A98CE0", "rgba(169,140,224,.14)"],
+  ["#D97C7C", "rgba(217,124,124,.14)"], ["#4FB9C9", "rgba(79,185,201,.14)"]
 ];
 
 const CHALLENGES = [
@@ -193,9 +193,10 @@ function weekIndex() {
 }
 
 function applyTheme() {
-  document.documentElement.setAttribute("data-theme", state.theme);
+  // облик один — переключать нечего
+  document.documentElement.setAttribute("data-theme", "dark");
 
-  const list = state.theme === "dark" ? ACCENTS_DARK : ACCENTS_LIGHT;
+  const list = ACCENTS;
   const root = document.documentElement;
 
   if (state.rotate) {
@@ -655,7 +656,7 @@ function renderMilestones() {
       $("msLbl").textContent = "сегодня";
     } else {
       $("msNum").textContent = Math.abs(left);
-      $("msLbl").textContent = plural(left, "день назад", "дня назад", "дней назад");
+      $("msLbl").textContent = plural(left, "��ень назад", "дня назад", "дней назад");
     }
 
     // переводим абстрактные дни в считаемые объекты
@@ -711,7 +712,7 @@ function renderMilestones() {
     when.className = "when";
     const dObj = new Date(m.date + "T00:00:00");
     const sameYear = dObj.getFullYear() === new Date().getFullYear();
-    when.textContent = dObj.toLocaleDateString("ru-RU", sameYear
+    when.textContent = dObj.toLocaleDateString(LOC(), sameYear
       ? { day: "numeric", month: "short" }
       : { day: "numeric", month: "short", year: "2-digit" });
 
@@ -822,7 +823,7 @@ function respawn(task) {
   next.snooze = iso(when);
   touch(next);
 
-  toast("Вернётся " + when.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }));
+  toast("Вернётся " + when.toLocaleDateString(LOC(), { day: "numeric", month: "long" }));
 }
 
 function autoArchive() {
@@ -1081,7 +1082,7 @@ function renderInsights() {
     ul.appendChild(li);
   });
 
-  // подсказка в форме задачи
+  // ��одсказка в форме задачи
   const k = Stats.factor(alive(state.tasks));
   const hint = $("estimateHint");
   if (hint) {
@@ -1096,7 +1097,7 @@ function renderInsights() {
    ============================================================ */
 
 function renderProfile() {
-  const dateStr = new Date().toLocaleDateString("ru-RU", {
+  const dateStr = new Date().toLocaleDateString(LOC(), {
     weekday: "long", day: "numeric", month: "long"
   });
 
@@ -1105,12 +1106,23 @@ function renderProfile() {
     $("userName").textContent = p.name || p.login;
     // картинка с GitHub сюда не ставится: в тёмном углу она бьёт по глазам.
     // Вместо неё — спокойная плитка с буквой.
+    // аватарка видна, но вписана в корпус: чёрная рамка и лёгкое
+    // приглушение, чтобы яркий квадрат не бил по глазам
     const av = $("avatar");
-    av.style.backgroundImage = "";
-    av.textContent = (p.login || p.name || "?").slice(0, 1).toUpperCase();
+    if (p.avatar) {
+      av.style.setProperty("--pic", "url(" + p.avatar + ")");
+      av.classList.add("has-img");
+      av.textContent = "";
+    } else {
+      av.classList.remove("has-img");
+      av.style.removeProperty("--pic");
+      av.textContent = (p.login || p.name || "?").slice(0, 1).toUpperCase();
+    }
   } else {
-    $("avatar").style.backgroundImage = "";
-    $("avatar").textContent = "—";
+    const av = $("avatar");
+    av.classList.remove("has-img");
+    av.style.removeProperty("--pic");
+    av.textContent = "—";
   }
 
   $("userMeta").textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
@@ -1350,12 +1362,6 @@ $("taskForm").addEventListener("submit", (e) => {
 
 $("bannerClose").addEventListener("click", () => banner(""));
 
-$("themeBtn").addEventListener("click", () => {
-  state.theme = state.theme === "dark" ? "light" : "dark";
-  save();
-  applyTheme();
-});
-
 $("settingsBtn").addEventListener("click", () => {
   $("fLogin").value = state.login;
   $("fUni").value = state.university;
@@ -1365,7 +1371,7 @@ $("settingsBtn").addEventListener("click", () => {
   $("fRotate").checked = state.rotate;
   $("fLang").value = Lang.get();
 
-  // поле токена всегда пустое — сам ток��н в нём не хранится.
+  // поле токена всегда пустое — сам ток����н в нём не хранится.
   // Подсказка ��оказывает, есть ли он на самом деле.
   $("fToken").value = "";
   $("fToken").placeholder = Sync.hasToken()
@@ -1544,7 +1550,7 @@ function renderDevices() {
     meta.className = "muted small dev-meta";
     meta.textContent = id === me
       ? "это устройство"
-      : "было видно " + new Date(rec.lastSeen || 0).toLocaleDateString("ru-RU");
+      : "было видно " + new Date(rec.lastSeen || 0).toLocaleDateString(LOC());
 
     row.append(dot, name, colors, meta);
     box.appendChild(row);
@@ -1701,7 +1707,7 @@ $("syncOff").addEventListener("click", () => {
 function seedDemo() {
   if (!isDemo() || state.tasks.length) return;
 
-  state.university = "МФТИ, ФПМИ";
+  state.university = "MIT, EECS";
   state.milestones = [
     { id: uid(), text: "Пробный ЕГЭ по профильной математике", date: "2026-08-19", created: "2026-07-01", done: false, updatedAt: Date.now() },
     { id: uid(), text: "Регистрация на олимпиаду по программированию", date: "2026-09-15", created: "2026-07-01", done: false, updatedAt: Date.now() },
@@ -1768,7 +1774,7 @@ async function boot() {
     renderRepos();
     renderHeat();
     $("source").textContent = "GitHub: " + github.source +
-      (github.exact ? "" : " · без токена видны только последние 90 дней");
+      (github.exact ? "" : " · ��ез токена видны только последние 90 дней");
   } else {
     $("source").textContent = "GitHub не подключён · всё остальное работает без него";
   }
@@ -1776,7 +1782,7 @@ async function boot() {
 
 boot();
 
-// самопроверка синхронизации — работает и на телефоне, консоль не нужна
+// самопроверка синхронизации — работает и на телефоне, консоль н�� нужна
 const checkBtn = $("syncCheck"), diagBox = $("syncDiag");
 
 if (checkBtn && diagBox) {

@@ -18,6 +18,9 @@ const Sync = (function () {
   const GIST_KEY  = "dashboard.gist";
   const DEV_KEY   = "dashboard.device";
   const FILE      = "dashboard.json";
+
+  // время в отчётах — на языке интерфейса
+  const LOC = () => (typeof Lang !== "undefined" ? Lang.locale() : "ru-RU");
   const DESC      = "dashboard-sync — личный дашборд, не удалять";
 
   const SCALARS = ["login", "university", "startMinutes", "breakMinutes", "sound", "rotate"];
@@ -251,7 +254,7 @@ const Sync = (function () {
         });
       }
 
-      report("ok", "Синхронизировано " + new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
+      report("ok", "Синхронизировано " + new Date().toLocaleTimeString(LOC(), { hour: "2-digit", minute: "2-digit" }));
     } catch (err) {
       const offline = !navigator.onLine || /Failed to fetch|NetworkError/i.test(err.message);
       report(offline ? "offline" : "error", offline ? "Оффлайн — сохранено на устройстве" : err.message);
@@ -326,7 +329,7 @@ const Sync = (function () {
         const d = JSON.parse(raw);
         add("в облаке задач", (d.tasks || []).filter((x) => !x.deleted).length);
         add("в облаке этапов", (d.milestones || []).filter((x) => !x.deleted).length);
-        add("облако обновлено", new Date(g.updated_at).toLocaleString("ru-RU"));
+        add("облако обновлено", new Date(g.updated_at).toLocaleString(LOC()));
       } catch (err) {
         add("чтение облака", "ОШИБКА — " + err.message);
       }
