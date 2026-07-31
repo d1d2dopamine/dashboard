@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверка синхронизации</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px 16px 60px;
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #2C2C2B; background: #FFF; max-width: 620px; margin: 0 auto;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.sub { color: #7D7A75; margin: 0 0 20px; font-size: 13px; }
+  pre {
+    background: #F0EFED; border: 1px solid #E6E5E3; border-radius: 8px;
+    padding: 12px; font-size: 12.5px; line-height: 1.65; white-space: pre-wrap;
+    word-break: break-word; font-family: ui-monospace, Menlo, monospace;
+    user-select: all; margin: 0 0 14px;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  button {
+    font: inherit; font-size: 14px; padding: 9px 14px; border-radius: 8px;
+    border: 1px solid #E6E5E3; background: #F9F8F7; color: #2C2C2B; cursor: pointer;
+  }
+  button.primary { background: #2783DE; border-color: #2783DE; color: #FFF; }
+  input {
+    font: inherit; width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid #E6E5E3; background: #FFF; margin-bottom: 10px;
+  }
+  .box { border: 1px solid #E6E5E3; border-radius: 10px; padding: 14px; margin-bottom: 18px; }
+  .box h2 { font-size: 15px; margin: 0 0 10px; }
+  a { color: #2783DE; }
+  .ok { color: #46A171; } .bad { color: #E56458; }
+</style>
+</head>
+<body>
+
+<h1>Проверка синхронизации</h1>
+<p class="sub">Эта страница ни от чего не зависит и никогда не кэшируется. Открой её на обоих устройствах.</p>
+
+<pre id="out">Жму…</pre>
+
+<div class="row">
+  <button class="primary" onclick="report()">Обновить отчёт</button>
+  <button onclick="copyOut()">Скопировать</button>
+</div>
+
+<div class="box">
+  <h2>Включить синхронизацию отсюда</h2>
+  <p class="sub">Работает, даже если в самом дашборде что-то сломано. Токен с правом <code>gist</code>.</p>
+  <input type="password" id="tok" placeholder="ghp_…" autocomplete="off" spellcheck="false">
+  <div class="row">
+    <button class="primary" onclick="connect()">Подключить</button>
+    <button onclick="forget()">Забыть токен</button>
+  </div>
+</div>
+
+<div class="box">
+  <h2>Живой тест обмена</h2>
+  <p class="sub">Положит в облако задачу «проверка СС:ММ». Если она появится на втором устройстве — канал цел.</p>
+  <div class="row">
+    <button onclick="pushTest()">Отправить тестовую задачу</button>
+    <button onclick="pullNow()">Забрать из облака сейчас</button>
+  </div>
+</div>
+
+<p class="sub"><a href="./">← Вернуться в дашборд</a></p>
+
+<script>
+const TOKEN_KEY = "dashboard.token";
+const GIST_KEY  = "dashboard.gist";
+const DEV_KEY   = "dashboard.device";
+const STATE_KEY = "dashboard.v2";
+const FILE      = "dashboard.json";
+
+const out = document.getElementById("out");
+const L = [];
+const say = (s) => { L.push(s); out.textContent = L.join("\n"); };
+const get = (k) => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } };
+
+async function api(path, options, tokenOverride) {
+  const t = tokenOverride || get(TOKEN_KEY);
+  const res = await fetch("https://api.github.com" + path, Object.assign({
+    cache: "no-store",
+    headers: {
+      "Authorization": "Bearer " + t,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    }
+  }, options || {}));
+  if (!res.ok) throw new Error("GitHub " + res.status + (res.status === 401 ? " — токен не принят" : res.status === 404 ? " — не найдено" : ""));
+  return res.json();
+}
+
+function localState() {
+  try { return JSON.parse(get(STATE_KEY)) || {}; } catch (e) { return {}; }
+}
+
+function alive(list) {
+  return (list || []).filter((x) => x && !x.deleted).length;
+}
+
+async function report() {
+  L.length = 0;
+  out.textContent = "Проверяю…";
+
+  say("адрес: " + location.origin + location.pathname.replace(/check\.html$/, ""));
+  say("устройство: " + (get(DEV_KEY) || "—"));
+
+  const t = get(TOKEN_KEY);
+  say("токен: " + (t ? "есть, …" + t.slice(-4) + " (" + t.length + " симв.)" : "НЕТ"));
+  say("хранилище: " + (get(GIST_KEY) || "НЕ ВЫБРАНО"));
+  say("сеть: " + (navigator.onLine ? "онлайн" : "ОФФЛАЙН"));
+
+  const s = localState();
+  say("здесь задач: " + alive(s.tasks) + " | этапов: " + alive(s.milestones));
+
+  // какая версия файлов реально отдаётся сервером
+  try {
+    const js = await (await fetch("./app.js?nocache=" + Date.now(), { cache: "no-store" })).text();
+    const m = js.match(/const BUILD = "([^"]+)"/);
+    say("app.js на сервере: " + (m ? m[1] : "СТАРЫЙ (без метки)"));
+  } catch (e) { say("app.js: не прочитался — " + e.message); }
+
+  try {
+    const js = await (await fetch("./sync.js?nocache=" + Date.now(), { cache: "no-store" })).text();
+    say("sync.js на сервере: " + (/function diagnose/.test(js) ? "свежий" : "СТАРЫЙ"));
+  } catch (e) { say("sync.js: не прочитался — " + e.message); }
+
+  if (!t) { say("→ Токена нет. Вставь его ниже и нажми «Подключить»"); return; }
+
+  try {
+    const me = await api("/user");
+    say("аккаунт: " + me.login);
+  } catch (e) {
+    say("аккаунт: ОШИБКА — " + e.message);
+    return;
+  }
+
+  try {
+    const list = await api("/gists?per_page=100");
+    const mine = list.filter((g) => g.files && g.files[FILE]);
+    say("хранилищ на аккаунте: " + mine.length);
+    mine.forEach((g) => say("   • " + g.id + (g.id === get(GIST_KEY) ? "  ← это устройство" : "")));
+    if (mine.length > 1) say("→ Хранилищ больше одного");
+  } catch (e) {
+    say("список хранилищ: ОШИБКА — " + e.message);
+    say("→ У токена нет права gist");
+  }
+
+  const id = get(GIST_KEY);
+  if (!id) { say("→ Хранилище не выбрано. Нажми «Подключить»"); return; }
+
+  try {
+    const g = await api("/gists/" + id);
+    const f = g.files && g.files[FILE];
+    const raw = f ? (f.truncated ? await (await fetch(f.raw_url)).text() : f.content) : "";
+    const d = JSON.parse(raw);
+    say("в облаке задач: " + alive(d.tasks) + " | этапов: " + alive(d.milestones));
+    (d.tasks || []).filter((x) => !x.deleted).slice(-8).forEach((x) => say("   • " + x.text));
+    say("облако обновлено: " + new Date(g.updated_at).toLocaleString("ru-RU"));
+  } catch (e) {
+    say("чтение облака: ОШИБКА — " + e.message);
+  }
+}
+
+async function connect() {
+  const v = document.getElementById("tok").value.trim();
+  if (!v) { alert("Вставь токен"); return; }
+
+  out.textContent = "Подключаю…";
+  try {
+    await api("/user", null, v);
+    localStorage.setItem(TOKEN_KEY, v);
+
+    const list = await api("/gists?per_page=100", null, v);
+    const found = list.find((g) => g.files && g.files[FILE]);
+
+    if (found) {
+      localStorage.setItem(GIST_KEY, found.id);
+    } else {
+      const s = localState();
+      const seed = {
+        v: 2, log: s.log || {}, events: s.events || [], scalarsUpdatedAt: s.scalarsUpdatedAt || 0,
+        tasks: s.tasks || [], milestones: s.milestones || [], inbox: s.inbox || [],
+        login: s.login || "", university: s.university || "",
+        startMinutes: s.startMinutes || 5, breakMinutes: s.breakMinutes || 90,
+        sound: s.sound !== false, rotate: s.rotate !== false
+      };
+      const created = await api("/gists", {
+        method: "POST",
+        body: JSON.stringify({
+          description: "dashboard-sync — личный дашборд, не удалять",
+          public: false,
+          files: { [FILE]: { content: JSON.stringify(seed) } }
+        })
+      }, v);
+      localStorage.setItem(GIST_KEY, created.id);
+    }
+
+    if (!get(DEV_KEY)) localStorage.setItem(DEV_KEY, "d" + Math.random().toString(36).slice(2, 9));
+    document.getElementById("tok").value = "";
+    await report();
+    say("→ ГОТОВО. Теперь то же самое на втором устройстве");
+  } catch (e) {
+    out.textContent = "Не вышло: " + e.message;
+  }
+}
+
+function forget() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(GIST_KEY);
+  report();
+}
+
+async function pushTest() {
+  const id = get(GIST_KEY);
+  if (!id) { alert("Сначала подключи токен"); return; }
+
+  out.textContent = "Отправляю…";
+  try {
+    const g = await api("/gists/" + id);
+    const f = g.files[FILE];
+    const raw = f.truncated ? await (await fetch(f.raw_url)).text() : f.content;
+    const d = JSON.parse(raw);
+
+    const now = Date.now();
+    const label = "проверка " + new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    d.tasks = d.tasks || [];
+    d.tasks.push({
+      id: "chk" + now.toString(36), text: label, step: "", energy: "low",
+      estimate: 5, spent: 0, snoozes: 0, done: false, archived: false, deleted: false,
+      snooze: "", created: now, doneAt: 0, updatedAt: now
+    });
+
+    await api("/gists/" + id, {
+      method: "PATCH",
+      body: JSON.stringify({ files: { [FILE]: { content: JSON.stringify(d) } } })
+    });
+
+    out.textContent = "Готово: в облаке лежит задача «" + label + "».\nТеперь открой дашборд на втором устройстве.";
+  } catch (e) {
+    out.textContent = "Не вышло: " + e.message;
+  }
+}
+
+async function pullNow() {
+  const id = get(GIST_KEY);
+  if (!id) { alert("Сначала подключи токен"); return; }
+
+  out.textContent = "Забираю…";
+  try {
+    const g = await api("/gists/" + id);
+    const f = g.files[FILE];
+    const raw = f.truncated ? await (await fetch(f.raw_url)).text() : f.content;
+    const d = JSON.parse(raw);
+
+    const s = localState();
+    const byId = new Map();
+    ["tasks", "milestones", "inbox"].forEach((k) => {
+      byId.clear();
+      (s[k] || []).forEach((x) => { if (x && x.id) byId.set(x.id, x); });
+      (d[k] || []).forEach((x) => {
+        if (!x || !x.id) return;
+        const have = byId.get(x.id);
+        if (!have || (x.updatedAt || 0) > (have.updatedAt || 0)) byId.set(x.id, x);
+      });
+      s[k] = [...byId.values()];
+    });
+
+    localStorage.setItem(STATE_KEY, JSON.stringify(s));
+    out.textContent = "Забрал. Задач теперь: " + alive(s.tasks) + ", этапов: " + alive(s.milestones) + ".\nОткрой дашборд.";
+  } catch (e) {
+    out.textContent = "Не вышло: " + e.message;
+  }
+}
+
+function copyOut() {
+  navigator.clipboard.writeText(out.textContent).then(
+    () => alert("Скопировано"),
+    () => alert("Не вышло — выдели текст вручную")
+  );
+}
+
+report();
+</script>
+</body>
+</html>
