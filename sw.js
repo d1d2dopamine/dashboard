@@ -1,7 +1,7 @@
 /* Сервис-воркер: сайт открывается без интернета.
    Оболочка берётся из кэша, данные — из сети, когда она есть. */
 
-const CACHE = "dashboard-v3";
+const CACHE = "dashboard-v5";
 
 const SHELL = [
   "./",
@@ -54,18 +54,15 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // оболочка — сначала кэш, потом тихое обновление
+  // оболочка — сначала сеть, кэш только запасной аэродром.
+  // Иначе после каждого обновления сайта пришлось бы жать Ctrl+Shift+R.
   e.respondWith(
-    caches.match(req).then((hit) => {
-      const net = fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
-          return res;
-        })
-        .catch(() => hit);
-
-      return hit || net;
-    })
+    fetch(req)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy));
+        return res;
+      })
+      .catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
   );
 });

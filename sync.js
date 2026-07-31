@@ -239,12 +239,12 @@ const Sync = (function () {
   function schedule() {
     if (!isOn()) return;
     clearTimeout(timer);
-    timer = setTimeout(() => run(false), 2500);
+    timer = setTimeout(() => run(false), 1200);
   }
 
   function startLoop() {
     clearInterval(loopId);
-    loopId = setInterval(() => run(false), 60000);
+    loopId = setInterval(() => run(false), 15000);
   }
 
   /* ---------- старт ---------- */
@@ -264,6 +264,10 @@ const Sync = (function () {
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") run(false);
     });
+
+    // окно снова в фокусе — самый частый момент, когда ждёшь свежие данные
+    window.addEventListener("focus", () => run(false));
+    window.addEventListener("pageshow", () => run(false));
   }
 
   return {

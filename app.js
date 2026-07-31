@@ -1243,8 +1243,16 @@ function renderSync(st) {
 
 // пришли данные с другого устройства — подмешиваем и перерисовываем
 function applyRemote(merged) {
+  const before = state.tasks.filter((t) => !t.done && !t.archived && !t.deleted).length
+    + state.milestones.filter((m) => !m.deleted).length;
+
   Object.assign(state, merged);
   persist();
+
+  const after = state.tasks.filter((t) => !t.done && !t.archived && !t.deleted).length
+    + state.milestones.filter((m) => !m.deleted).length;
+
+  if (after > before) toast("Приехало с другого устройства");
 
   const stillThere = state.tasks.some((t) => t.id === currentId && !t.done && !t.archived && !t.deleted);
   if (!stillThere) pickTask(false);
