@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Сейчас</title>
-<meta name="theme-color" content="#2783DE">
+<title>Dashboard</title>
+<meta name="theme-color" content="#171a21">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Сейчас">
+<meta name="apple-mobile-web-app-title" content="Dashboard">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon.svg">
@@ -244,21 +244,38 @@
     </div>
 
     <form id="settingsForm">
-      <label class="field"><span>Ник на GitHub</span><input type="text" id="fLogin" placeholder="octocat" autocomplete="off"></label>
-      <label class="field"><span>Вуз или большая цель</span><input type="text" id="fUni" placeholder="МФТИ, ФПМИ" autocomplete="off"></label>
-      <label class="field"><span>Длина короткого старта, минут</span><input type="number" id="fStart" min="1" max="60" placeholder="5"></label>
-      <label class="field"><span>Напоминать о перерыве через, минут</span><input type="number" id="fBreak" min="20" max="240" placeholder="90"></label>
 
-      <label class="check-field"><input type="checkbox" id="fSound"><span>��вук при завершении задачи</span></label>
-      <label class="check-field"><input type="checkbox" id="fRotate"><span>Менять цвет каждую неделю</span></label>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab on" data-pane="paneMain">Основное</button>
+        <button type="button" class="tab" data-pane="paneLook">Вид</button>
+        <button type="button" class="tab" data-pane="paneDev">Устройства</button>
+        <button type="button" class="tab" data-pane="paneSync">Синхронизация</button>
+        <button type="button" class="tab" data-pane="paneData">Данные</button>
+      </div>
 
-      <label class="field"><span>Облик интерфейса</span>
-        <select id="fSkin">
-          <option value="modern">Современный</option>
-          <option value="retro">Старый, как в 2012-м</option>
-        </select>
-      </label>
+      <!-- ---- основное ---- -->
+      <div class="pane on" id="paneMain">
+        <label class="field"><span>Ник на GitHub</span><input type="text" id="fLogin" placeholder="octocat" autocomplete="off"></label>
+        <label class="field"><span>Вуз или большая цель</span><input type="text" id="fUni" placeholder="МФТИ, ФПМИ" autocomplete="off"></label>
+        <label class="field"><span>Длина короткого старта, минут</span><input type="number" id="fStart" min="1" max="60" placeholder="5"></label>
+        <label class="field"><span>Напоминать о перерыве через, минут</span><input type="number" id="fBreak" min="20" max="240" placeholder="90"></label>
+        <label class="check-field"><input type="checkbox" id="fSound"><span>Звук при завершении задачи</span></label>
+      </div>
 
+      <!-- ---- вид ---- -->
+      <div class="pane" id="paneLook">
+        <label class="field"><span>Язык</span>
+          <select id="fLang">
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+          </select>
+        </label>
+        <label class="check-field"><input type="checkbox" id="fRotate"><span>Менять цвет каждую неделю</span></label>
+        <p class="muted small">Смена языка перезагружает страницу. Данные при этом не трогаются.</p>
+      </div>
+
+      <!-- ---- устройства ---- -->
+      <div class="pane" id="paneDev">
       <div class="sync-box">
         <div class="sync-line">
           <strong>Устройства</strong>
@@ -270,7 +287,10 @@
           <button type="button" class="btn btn-ghost" id="claimBtn">Пометить старые записи этим устройством</button>
         </div>
       </div>
+      </div>
 
+      <!-- ---- данные ---- -->
+      <div class="pane" id="paneData">
       <div class="sync-box">
         <div class="sync-line">
           <strong>Копия файлом</strong>
@@ -283,7 +303,10 @@
           <input type="file" id="impFile" accept="application/json,.json" class="hidden">
         </div>
       </div>
+      </div>
 
+      <!-- ---- синхронизация ---- -->
+      <div class="pane" id="paneSync">
       <div class="sync-box">
         <div class="sync-line">
           <strong>Синхронизация устройств</strong>
@@ -301,6 +324,7 @@
         <p class="muted small" id="buildInfo">сборка —</p>
         <p class="muted small"><a href="./check.html">Открыть страницу проверки</a> — работает, даже если дашборд сломан</p>
       </div>
+      </div>
 
       <div class="modal-foot">
         <button type="button" class="btn btn-ghost" id="resetBtn">Сбросить всё</button>
@@ -312,6 +336,7 @@
 
 <div class="toast hidden" id="toast"></div>
 
+<script src="./i18n.js"></script>
 <script src="./stats.js"></script>
 <script src="./sync.js"></script>
 <script src="./app.js"></script>

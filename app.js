@@ -15,7 +15,6 @@ const DEFAULTS = {
   login: "",
   university: "",
   theme: "light",
-  skin: "modern",        // "modern" или "retro" — облик интерфейса
   sound: true,
   rotate: true,
   startMinutes: 5,
@@ -114,7 +113,7 @@ const today = () => iso(new Date());
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // видна в настройках — сразу понятно, свежие ли файлы залиты
-const BUILD = "v9";
+const BUILD = "v10";
 
 // палитра меток устройств — различимы и на светлой, и на тёмной теме
 const DEVICE_COLORS = ["#46A171", "#7C5CE0", "#D5803B", "#2783DE", "#E56458", "#0FA5A5"];
@@ -195,7 +194,6 @@ function weekIndex() {
 
 function applyTheme() {
   document.documentElement.setAttribute("data-theme", state.theme);
-  document.documentElement.setAttribute("data-skin", state.skin || "modern");
 
   const list = state.theme === "dark" ? ACCENTS_DARK : ACCENTS_LIGHT;
   const root = document.documentElement;
@@ -462,7 +460,7 @@ function renderNow() {
       : "Нажми N и запиши первую мысль";
     acts.forEach((id) => { $(id).disabled = true; });
     $("nowHint").textContent = "";
-    document.title = "Сейчас";
+    document.title = "Dashboard";
     return;
   }
 
@@ -473,11 +471,12 @@ function renderNow() {
     " " + plural(state.startMinutes, "минуту", "минуты", "минут") + ". Это разрешено.";
 
   // текущая задача видна в заголовке вкладки — и в списке вкладок на телефоне
-  document.title = task.text.length > 40 ? task.text.slice(0, 39) + "…" : task.text;
+  document.title = (task.text.length > 40 ? task.text.slice(0, 39) + "…" : task.text) +
+    " — Dashboard";
 }
 
 /* ============================================================
-   ТАЙМЕР И ЗАЩИТА ОТ ГИПЕР����ОКУСА
+   ТАЙМЕР И ЗАЩИТА ОТ ГИПЕРФОКУСА
    ============================================================ */
 
 const RING = 213.6;
@@ -1104,10 +1103,13 @@ function renderProfile() {
   if (github && github.profile) {
     const p = github.profile;
     $("userName").textContent = p.name || p.login;
+    // картинка с GitHub сюда не ставится: в тёмном углу она бьёт по глазам.
+    // Вместо неё — спокойная плитка с буквой.
     const av = $("avatar");
-    if (p.avatar) av.style.backgroundImage = "url(" + p.avatar + ")";
-    else av.textContent = (p.login || "?").slice(0, 1).toUpperCase();
+    av.style.backgroundImage = "";
+    av.textContent = (p.login || p.name || "?").slice(0, 1).toUpperCase();
   } else {
+    $("avatar").style.backgroundImage = "";
     $("avatar").textContent = "—";
   }
 
@@ -1361,10 +1363,10 @@ $("settingsBtn").addEventListener("click", () => {
   $("fBreak").value = state.breakMinutes;
   $("fSound").checked = state.sound;
   $("fRotate").checked = state.rotate;
-  $("fSkin").value = state.skin || "modern";
+  $("fLang").value = Lang.get();
 
-  // поле токена всегда пустое — сам токен в нём не хранится.
-  // Подсказка показывает, есть ли он на самом деле.
+  // поле токена всегда пустое — сам ток��н в нём не хранится.
+  // Подсказка ��оказывает, есть ли он на самом деле.
   $("fToken").value = "";
   $("fToken").placeholder = Sync.hasToken()
     ? "токен уже сохранён на этом устройстве"
@@ -1391,7 +1393,6 @@ $("settingsForm").addEventListener("submit", (e) => {
   state.breakMinutes = Math.min(240, Math.max(20, parseInt($("fBreak").value, 10) || 90));
   state.sound = $("fSound").checked;
   state.rotate = $("fRotate").checked;
-  state.skin = $("fSkin").value;
   state.scalarsUpdatedAt = Date.now();
   save();
 
@@ -1412,6 +1413,20 @@ $("settingsForm").addEventListener("submit", (e) => {
   renderMilestones();
   renderNow();
   boot();
+
+  // язык меняется последним: Lang.set перезагружает страницу
+  Lang.set($("fLang").value);
+});
+
+/* --- вкладки в настройках --- */
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("on"));
+    document.querySelectorAll(".pane").forEach((p) => p.classList.remove("on"));
+    tab.classList.add("on");
+    const pane = $(tab.dataset.pane);
+    if (pane) pane.classList.add("on");
+  });
 });
 
 $("resetBtn").addEventListener("click", () => {
@@ -1698,7 +1713,7 @@ function seedDemo() {
     { id: uid(), text: "Отправить заявку на консультацию", step: "найти почту на сайте вуза", energy: "low", estimate: 10, spent: 0, snoozes: 0, done: false, archived: false, snooze: "", created: Date.now() - 1 * DAY, doneAt: 0, updatedAt: Date.now() },
     { id: uid(), text: "Прочитать главу про нейросети", step: "", energy: "mid", estimate: 25, spent: 0, snoozes: 0, done: false, archived: false, snooze: "", created: Date.now() - 12 * DAY, doneAt: 0, updatedAt: Date.now() },
     { id: uid(), text: "Решить вариант по стереометрии", step: "", energy: "mid", estimate: 30, spent: 75, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 20 * DAY, doneAt: Date.now() - 18 * DAY, updatedAt: Date.now() },
-    { id: uid(), text: "Настроит�� деплой дашборда", step: "", energy: "mid", estimate: 20, spent: 45, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 16 * DAY, doneAt: Date.now() - 15 * DAY, updatedAt: Date.now() },
+    { id: uid(), text: "Настроить деплой дашборда", step: "", energy: "mid", estimate: 20, spent: 45, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 16 * DAY, doneAt: Date.now() - 15 * DAY, updatedAt: Date.now() },
     { id: uid(), text: "Разобрать конспект по физике", step: "", energy: "low", estimate: 15, spent: 25, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 11 * DAY, doneAt: Date.now() - 10 * DAY, updatedAt: Date.now() },
     { id: uid(), text: "Повторить тригонометрию", step: "", energy: "mid", estimate: 20, spent: 50, snoozes: 0, done: true, archived: false, snooze: "", created: Date.now() - 6 * DAY, doneAt: Date.now() - 5 * DAY, updatedAt: Date.now() }
   ];
@@ -1785,3 +1800,8 @@ if (checkBtn && diagBox) {
     }
   });
 }
+
+/* Язык. Внутри приложение всегда говорит по-русски, а Lang переводит
+   уже готовый экран и всё, что появится позже. */
+Lang.apply();
+Lang.observe();

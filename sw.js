@@ -1,13 +1,15 @@
 /* Сервис-воркер: сайт открывается без интернета.
    Оболочка берётся из кэша, данные — из сети, когда она есть. */
 
-const CACHE = "dashboard-v9";
+const CACHE = "dashboard-v10";
 
 const SHELL = [
   "./",
   "./index.html",
   "./style.css",
+  "./retro.css",
   "./app.js",
+  "./i18n.js",
   "./stats.js",
   "./sync.js",
   "./manifest.webmanifest",
