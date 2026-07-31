@@ -1,0 +1,557 @@
+/* ============================================================
+   Старый облик — веб 2010–2015 годов
+
+   Подключается атрибутом data-skin="retro" на <html>.
+   Градиенты, внутренние блики, тени под текстом, рамки в один пиксель,
+   Segoe UI / Tahoma — то, как выглядели панели управления того времени.
+   Ничего не ломает: всё описано поверх базовой темы.
+   ============================================================ */
+
+[data-skin="retro"]{
+  --canvas:#FFFFFF;
+  --soft:#F4F6F8;
+  --surface2:#E4E9EE;
+  --border:#C6CED6;
+  --text:#243040;
+  --muted:#6B7784;
+  --accent:#3B7DC4;
+  --accent-soft:#E8F0FA;
+  --green:#4C9A4C;
+  --orange:#D08326;
+  --h0:#E8EDF1;
+  --h1:#CADEEF;
+  --h2:#9CC2E2;
+  --h3:#6BA0D0;
+  --h4:#3B7DC4;
+  --shadow:0 1px 2px rgba(28,44,64,.14);
+
+  --retro-ink:#FFFFFF;
+  --retro-line:#B7C1CB;
+  --retro-bar-a:#FBFCFD;
+  --retro-bar-b:#E7ECF1;
+}
+
+[data-skin="retro"][data-theme="dark"]{
+  --canvas:#2B3038;
+  --soft:#333941;
+  --surface2:#3D444E;
+  --border:#161A20;
+  --text:#E8EDF2;
+  --muted:#9AA5B1;
+  --accent:#5C93CE;
+  --accent-soft:rgba(92,147,206,.18);
+  --h0:#3A414A;
+  --h1:#2C4460;
+  --h2:#38597C;
+  --h3:#456F9C;
+  --h4:#5C93CE;
+  --shadow:0 1px 2px rgba(0,0,0,.45);
+
+  --retro-ink:rgba(255,255,255,.06);
+  --retro-line:#1B2027;
+  --retro-bar-a:#3A414A;
+  --retro-bar-b:#2E343C;
+}
+
+/* ---------- общее полотно ---------- */
+
+[data-skin="retro"] body{
+  font-family:"Segoe UI","Helvetica Neue",Tahoma,Verdana,Arial,sans-serif;
+  font-size:13px;
+  line-height:1.45;
+  color:var(--text);
+  background:#DDE3E9;
+  background-image:linear-gradient(#E7ECF1, #D5DCE4 340px, #D5DCE4);
+  background-attachment:fixed;
+}
+
+[data-skin="retro"][data-theme="dark"] body{
+  background:#22262C;
+  background-image:linear-gradient(#282D34, #1E2228 340px, #1E2228);
+}
+
+[data-skin="retro"] .wrap{max-width:940px;padding:24px 20px 56px}
+[data-skin="retro"] .small{font-size:11px}
+
+/* ---------- карточки — панели с шапкой ---------- */
+
+[data-skin="retro"] .card{
+  background:var(--canvas);
+  border:1px solid var(--retro-line);
+  border-radius:6px;
+  padding:16px 18px 18px;
+  margin-bottom:16px;
+  box-shadow:0 1px 0 var(--retro-ink) inset, 0 1px 3px rgba(30,45,64,.16);
+}
+
+[data-skin="retro"] .card.now,
+[data-skin="retro"] .card.goal{
+  background:linear-gradient(var(--retro-bar-a), var(--canvas) 90px);
+}
+
+[data-skin="retro"] .card-head{
+  margin:-16px -18px 14px;
+  padding:9px 18px;
+  background:linear-gradient(var(--retro-bar-a), var(--retro-bar-b));
+  border-bottom:1px solid var(--retro-line);
+  border-radius:5px 5px 0 0;
+  align-items:center;
+}
+
+[data-skin="retro"] .card-head h2{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  color:#42505F;
+  text-shadow:0 1px 0 #FFF;
+}
+
+[data-skin="retro"][data-theme="dark"] .card-head h2{color:#C6D0DA;text-shadow:0 -1px 0 rgba(0,0,0,.5)}
+
+[data-skin="retro"] .eyebrow{
+  font-size:10px;letter-spacing:.1em;color:var(--muted);text-shadow:0 1px 0 #FFF;
+}
+[data-skin="retro"][data-theme="dark"] .eyebrow{text-shadow:none}
+
+[data-skin="retro"] .grid-2{gap:16px;margin-bottom:16px}
+
+/* ---------- шапка страницы ---------- */
+
+[data-skin="retro"] .topbar{
+  background:linear-gradient(#FDFDFE, #E9EEF3);
+  border:1px solid var(--retro-line);
+  border-radius:6px;
+  padding:12px 16px;
+  margin-bottom:18px;
+  box-shadow:0 1px 0 #FFF inset, 0 1px 3px rgba(30,45,64,.16);
+}
+
+[data-skin="retro"][data-theme="dark"] .topbar{
+  background:linear-gradient(#3A414A, #2C3138);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 1px 3px rgba(0,0,0,.4);
+}
+
+[data-skin="retro"] .avatar{
+  border-radius:4px;width:44px;height:44px;
+  border:1px solid var(--retro-line);
+  box-shadow:0 1px 0 #FFF inset;
+}
+
+[data-skin="retro"] .ident-text h1{
+  font-size:19px;font-weight:700;letter-spacing:0;
+  text-shadow:0 1px 0 #FFF;
+}
+[data-skin="retro"][data-theme="dark"] .ident-text h1{text-shadow:0 -1px 0 rgba(0,0,0,.5)}
+[data-skin="retro"] .ident-text p{font-size:12px}
+
+/* ---------- кнопки ---------- */
+
+[data-skin="retro"] .btn{
+  min-height:28px;
+  padding:0 14px;
+  font-size:12px;
+  font-weight:600;
+  border-radius:4px;
+  color:#33404F;
+  border:1px solid #AFB9C4;
+  background:linear-gradient(#FDFDFE, #E3E9EF);
+  text-shadow:0 1px 0 #FFF;
+  box-shadow:0 1px 0 #FFF inset, 0 1px 1px rgba(30,45,64,.12);
+  transition:none;
+}
+
+[data-skin="retro"] .btn:hover{
+  background:linear-gradient(#FFFFFF, #EBF0F5);
+  border-color:#9DA9B6;
+}
+
+[data-skin="retro"] .btn:active{
+  transform:none;
+  background:linear-gradient(#DDE4EB, #EFF3F7);
+  box-shadow:0 1px 3px rgba(30,45,64,.25) inset;
+}
+
+[data-skin="retro"] .btn:disabled{opacity:.5;box-shadow:none}
+
+[data-skin="retro"] .btn-primary{
+  color:#FFF;
+  border-color:#2C6199;
+  background:linear-gradient(#6BA6DE, #3072B4);
+  text-shadow:0 -1px 0 rgba(0,0,0,.28);
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 1px 2px rgba(20,45,75,.3);
+}
+[data-skin="retro"] .btn-primary:hover{
+  background:linear-gradient(#7BB2E6, #3A7CBE);
+  filter:none;
+}
+[data-skin="retro"] .btn-primary:active{
+  background:linear-gradient(#2E6DAC, #4C8AC6);
+  box-shadow:0 1px 4px rgba(15,40,70,.45) inset;
+}
+
+[data-skin="retro"] .btn-ghost{
+  background:linear-gradient(#FBFCFD, #EDF1F5);
+  color:#5A6673;
+  border-color:#C2CBD4;
+}
+[data-skin="retro"] .btn-ghost:hover{color:#33404F}
+
+[data-skin="retro"] .btn-lg{min-height:34px;padding:0 20px;font-size:13px}
+
+[data-skin="retro"][data-theme="dark"] .btn{
+  color:#DCE3EA;border-color:#181C22;
+  background:linear-gradient(#454D57, #363C44);
+  text-shadow:0 -1px 0 rgba(0,0,0,.5);
+  box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 1px 1px rgba(0,0,0,.35);
+}
+[data-skin="retro"][data-theme="dark"] .btn:hover{background:linear-gradient(#4E5761, #3D444D)}
+[data-skin="retro"][data-theme="dark"] .btn-ghost{background:linear-gradient(#3E454E, #333941);color:#A9B4BF}
+
+[data-skin="retro"] .btn-capture kbd{
+  border-radius:3px;
+  border:1px solid #B4BEC9;
+  background:linear-gradient(#FFF, #E6EBF0);
+  box-shadow:0 1px 0 rgba(30,45,64,.18);
+  font-family:Tahoma,Verdana,sans-serif;
+  font-size:10px;
+}
+
+[data-skin="retro"] .icon-btn{
+  border-radius:4px;
+  border:1px solid #AFB9C4;
+  background:linear-gradient(#FDFDFE, #E3E9EF);
+  box-shadow:0 1px 0 #FFF inset;
+  color:#5A6673;
+}
+[data-skin="retro"] .icon-btn:hover{background:linear-gradient(#FFFFFF, #EBF0F5);color:#33404F}
+[data-skin="retro"][data-theme="dark"] .icon-btn{
+  border-color:#181C22;background:linear-gradient(#454D57, #363C44);color:#BAC4CE;
+  box-shadow:0 1px 0 rgba(255,255,255,.07) inset;
+}
+
+[data-skin="retro"] .mini{
+  font-size:11px;
+  border-radius:3px;
+  border:1px solid transparent;
+}
+[data-skin="retro"] .mini:hover{
+  border-color:#C6CED6;
+  background:linear-gradient(#FFF, #EEF2F6);
+}
+
+/* ---------- чипы сил — как сегментный переключатель ---------- */
+
+[data-skin="retro"] .energy{gap:0;border-radius:4px;overflow:hidden;border:1px solid #AFB9C4;box-shadow:0 1px 1px rgba(30,45,64,.12)}
+[data-skin="retro"] .energy-lbl{margin-right:8px;border:none}
+[data-skin="retro"] .energy .energy-lbl{position:absolute;left:-9999px}
+
+[data-skin="retro"] .chip{
+  border-radius:0;
+  border:none;
+  border-left:1px solid #AFB9C4;
+  padding:0 12px;
+  min-height:26px;
+  font-size:11px;
+  font-weight:600;
+  color:#5A6673;
+  background:linear-gradient(#FDFDFE, #E3E9EF);
+  text-shadow:0 1px 0 #FFF;
+}
+[data-skin="retro"] .chip:first-of-type{border-left:none}
+[data-skin="retro"] .chip:hover{background:linear-gradient(#FFFFFF, #EBF0F5)}
+
+[data-skin="retro"] .chip.on{
+  color:#FFF;
+  background:linear-gradient(#5F9BD5, #2F71B3);
+  text-shadow:0 -1px 0 rgba(0,0,0,.3);
+  box-shadow:0 1px 3px rgba(20,45,75,.35) inset;
+}
+
+[data-skin="retro"][data-theme="dark"] .chip{
+  border-left-color:#181C22;
+  background:linear-gradient(#454D57, #363C44);
+  color:#BAC4CE;text-shadow:0 -1px 0 rgba(0,0,0,.5);
+}
+
+/* ---------- блок «Сейчас» ---------- */
+
+[data-skin="retro"] .now-text h2{
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:0;
+  text-shadow:0 1px 0 #FFF;
+}
+[data-skin="retro"][data-theme="dark"] .now-text h2{text-shadow:0 -1px 0 rgba(0,0,0,.5)}
+[data-skin="retro"] .now-step{font-size:13px}
+[data-skin="retro"] .now-hint{font-size:11px;font-style:italic}
+
+[data-skin="retro"] .ring-bg{stroke:#D6DDE4}
+[data-skin="retro"] .ring-label{font-family:Tahoma,Verdana,sans-serif;font-weight:700}
+
+/* ---------- цифры и полосы ---------- */
+
+[data-skin="retro"] .tnum,
+[data-skin="retro"] .rhythm-num strong{
+  font-family:Tahoma,Verdana,sans-serif;
+  font-weight:700;
+  letter-spacing:0;
+  text-shadow:0 1px 0 #FFF;
+}
+[data-skin="retro"][data-theme="dark"] .tnum,
+[data-skin="retro"][data-theme="dark"] .rhythm-num strong{text-shadow:0 -1px 0 rgba(0,0,0,.5)}
+
+[data-skin="retro"] .tlbl{font-size:11px}
+
+[data-skin="retro"] .ms-num{
+  font-family:Tahoma,Verdana,sans-serif;
+  font-size:38px;font-weight:700;letter-spacing:-.01em;
+  text-shadow:0 1px 0 #FFF;
+}
+[data-skin="retro"][data-theme="dark"] .ms-num{text-shadow:0 -1px 0 rgba(0,0,0,.5)}
+
+[data-skin="retro"] .goal-head h2{font-size:19px;font-weight:700;letter-spacing:0}
+
+[data-skin="retro"] .drain{
+  height:16px;
+  border-radius:8px;
+  border:1px solid #B4BEC9;
+  background:linear-gradient(#E2E7EC, #F2F5F8);
+  box-shadow:0 1px 3px rgba(30,45,64,.2) inset;
+  padding:1px;
+}
+
+[data-skin="retro"] .drain-fill{
+  border-radius:7px;
+  background:linear-gradient(#7CB3E4, #3B7DC4);
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset;
+  background-image:
+    linear-gradient(135deg,
+      rgba(255,255,255,.22) 25%, transparent 25%,
+      transparent 50%, rgba(255,255,255,.22) 50%,
+      rgba(255,255,255,.22) 75%, transparent 75%, transparent),
+    linear-gradient(#7CB3E4, #3B7DC4);
+  background-size:22px 22px, auto;
+}
+
+[data-skin="retro"] .dot{border-radius:2px;box-shadow:0 1px 0 rgba(255,255,255,.6) inset}
+
+[data-skin="retro"] .badge{
+  border-radius:9px;
+  padding:1px 8px;
+  font-family:Tahoma,Verdana,sans-serif;
+  font-size:11px;font-weight:700;
+  background:linear-gradient(#8A96A3, #626E7B);
+  color:#FFF;
+  text-shadow:0 -1px 0 rgba(0,0,0,.3);
+  border:none;
+}
+
+[data-skin="retro"] .challenge{
+  border-radius:4px;
+  border:1px solid #D8C48A;
+  background:linear-gradient(#FDF8E4, #F7EDCB);
+  color:#6B5A20;
+  text-shadow:0 1px 0 rgba(255,255,255,.7);
+  font-size:12px;
+}
+[data-skin="retro"][data-theme="dark"] .challenge{
+  border-color:#5A4E2A;background:linear-gradient(#403A28, #35301F);color:#E0D4A6;text-shadow:none;
+}
+
+/* ---------- списки ---------- */
+
+[data-skin="retro"] .tasks li,
+[data-skin="retro"] .ms-list li,
+[data-skin="retro"] .inbox li,
+[data-skin="retro"] .forgot li,
+[data-skin="retro"] .insights li,
+[data-skin="retro"] .repos li,
+[data-skin="retro"] .done-list li{
+  border-top:1px solid #E7EBEF;
+  padding-top:9px;padding-bottom:9px;
+}
+[data-skin="retro"][data-theme="dark"] .tasks li,
+[data-skin="retro"][data-theme="dark"] .ms-list li,
+[data-skin="retro"][data-theme="dark"] .inbox li,
+[data-skin="retro"][data-theme="dark"] .forgot li,
+[data-skin="retro"][data-theme="dark"] .insights li,
+[data-skin="retro"][data-theme="dark"] .repos li,
+[data-skin="retro"][data-theme="dark"] .done-list li{border-top-color:#3B424B}
+
+[data-skin="retro"] .tasks li:hover,
+[data-skin="retro"] .ms-list li:hover,
+[data-skin="retro"] .inbox li:hover{background:#F6F9FB}
+[data-skin="retro"][data-theme="dark"] .tasks li:hover,
+[data-skin="retro"][data-theme="dark"] .ms-list li:hover,
+[data-skin="retro"][data-theme="dark"] .inbox li:hover{background:#333941}
+
+[data-skin="retro"] .tag{
+  border-radius:3px;
+  border:1px solid #C6CED6;
+  background:linear-gradient(#FBFCFD, #EBEFF3);
+  color:#5A6673;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  padding:1px 6px;
+}
+[data-skin="retro"][data-theme="dark"] .tag{border-color:#1B2027;background:linear-gradient(#414852, #363C44);color:#A9B4BF}
+
+[data-skin="retro"] .repos a{color:#2A6BB0;text-decoration:none}
+[data-skin="retro"] .repos a:hover{text-decoration:underline}
+[data-skin="retro"][data-theme="dark"] .repos a{color:#79AEE3}
+
+[data-skin="retro"] .disclosure{
+  margin:-16px -18px;
+  padding:10px 18px;
+  background:linear-gradient(var(--retro-bar-a), var(--retro-bar-b));
+  border-bottom:1px solid var(--retro-line);
+  border-radius:5px 5px 0 0;
+  font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.02em;
+  color:#42505F;
+  text-shadow:0 1px 0 #FFF;
+}
+[data-skin="retro"] .disclosure[aria-expanded="true"]{margin-bottom:16px}
+[data-skin="retro"][data-theme="dark"] .disclosure{color:#C6D0DA;text-shadow:0 -1px 0 rgba(0,0,0,.5)}
+
+/* ---------- поля ввода ---------- */
+
+[data-skin="retro"] input[type="text"],
+[data-skin="retro"] input[type="number"],
+[data-skin="retro"] input[type="date"],
+[data-skin="retro"] input[type="password"],
+[data-skin="retro"] select,
+[data-skin="retro"] textarea{
+  font-family:inherit;
+  font-size:12px;
+  border-radius:3px;
+  border:1px solid #ADB7C1;
+  background:#FFF;
+  color:var(--text);
+  box-shadow:0 1px 2px rgba(30,45,64,.14) inset;
+  padding:6px 8px;
+  min-height:28px;
+}
+
+[data-skin="retro"] input:focus,
+[data-skin="retro"] select:focus,
+[data-skin="retro"] textarea:focus{
+  outline:none;
+  border-color:#5A94CE;
+  box-shadow:0 1px 2px rgba(30,45,64,.12) inset, 0 0 4px rgba(90,148,206,.55);
+}
+
+[data-skin="retro"][data-theme="dark"] input[type="text"],
+[data-skin="retro"][data-theme="dark"] input[type="number"],
+[data-skin="retro"][data-theme="dark"] input[type="date"],
+[data-skin="retro"][data-theme="dark"] input[type="password"],
+[data-skin="retro"][data-theme="dark"] select,
+[data-skin="retro"][data-theme="dark"] textarea{
+  background:#242930;border-color:#161A20;
+  box-shadow:0 1px 2px rgba(0,0,0,.5) inset;
+}
+
+[data-skin="retro"] .field span{font-size:11px;font-weight:700;color:#5A6673;text-transform:uppercase;letter-spacing:.03em}
+[data-skin="retro"][data-theme="dark"] .field span{color:#9AA5B1}
+
+[data-skin="retro"] .task-note{border-radius:3px;box-shadow:0 1px 2px rgba(30,45,64,.14) inset}
+
+/* ---------- окна ---------- */
+
+[data-skin="retro"] .overlay{background:rgba(30,42,56,.55)}
+
+[data-skin="retro"] .modal{
+  border-radius:6px;
+  border:1px solid #8E99A5;
+  background:var(--canvas);
+  box-shadow:0 10px 34px rgba(15,25,40,.45);
+}
+
+[data-skin="retro"] .modal-head{
+  background:linear-gradient(#F7F9FB, #E2E8EE);
+  border-bottom:1px solid var(--retro-line);
+  border-radius:5px 5px 0 0;
+  padding:10px 16px;
+}
+[data-skin="retro"] .modal-head h2{
+  font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  color:#42505F;text-shadow:0 1px 0 #FFF;
+}
+[data-skin="retro"][data-theme="dark"] .modal-head{background:linear-gradient(#3A414A, #2E343C)}
+[data-skin="retro"][data-theme="dark"] .modal-head h2{color:#C6D0DA;text-shadow:0 -1px 0 rgba(0,0,0,.5)}
+
+[data-skin="retro"] .sync-box{
+  border-radius:4px;
+  border:1px solid var(--retro-line);
+  background:linear-gradient(#FAFBFC, #F1F4F7);
+}
+[data-skin="retro"][data-theme="dark"] .sync-box{background:linear-gradient(#353B43, #2E343C)}
+
+[data-skin="retro"] .capture{
+  border-radius:6px;
+  border:1px solid #8E99A5;
+  box-shadow:0 10px 34px rgba(15,25,40,.45);
+}
+[data-skin="retro"] .capture-hint{font-size:11px}
+
+/* ---------- тост и баннер ---------- */
+
+[data-skin="retro"] .toast{
+  border-radius:4px;
+  border:1px solid #1E2A38;
+  background:linear-gradient(#4A5765, #2C3846);
+  color:#FFF;
+  font-size:12px;
+  text-shadow:0 -1px 0 rgba(0,0,0,.4);
+  box-shadow:0 1px 0 rgba(255,255,255,.15) inset, 0 4px 14px rgba(15,25,40,.4);
+}
+
+[data-skin="retro"] .toast-act{
+  border-radius:3px;
+  border:1px solid rgba(255,255,255,.3);
+  background:linear-gradient(rgba(255,255,255,.22), rgba(255,255,255,.08));
+  font-size:11px;
+  padding:3px 10px;
+}
+
+[data-skin="retro"] .banner{
+  border-radius:4px;
+  border:1px solid #D8C48A;
+  background:linear-gradient(#FDF8E4, #F6EBC6);
+  color:#6B5A20;
+  text-shadow:0 1px 0 rgba(255,255,255,.7);
+  font-size:12px;
+}
+[data-skin="retro"][data-theme="dark"] .banner{
+  border-color:#5A4E2A;background:linear-gradient(#403A28, #35301F);color:#E0D4A6;text-shadow:none;
+}
+
+/* ---------- мелочи ---------- */
+
+[data-skin="retro"] .dev-dot{box-shadow:0 1px 0 rgba(255,255,255,.55) inset, 0 0 0 1px rgba(30,45,64,.18)}
+[data-skin="retro"] .dev-swatch{border-radius:3px;box-shadow:0 1px 0 rgba(255,255,255,.5) inset}
+[data-skin="retro"] .cell{border-radius:1px}
+[data-skin="retro"] .sync-diag{
+  border-radius:3px;
+  border:1px solid #ADB7C1;
+  background:#FFF;
+  box-shadow:0 1px 2px rgba(30,45,64,.14) inset;
+  font-family:"Lucida Console",Consolas,monospace;
+  font-size:11px;
+}
+[data-skin="retro"][data-theme="dark"] .sync-diag{background:#22262C;border-color:#161A20}
+
+[data-skin="retro"] .foot{
+  margin-top:22px;padding-top:14px;
+  border-top:1px solid rgba(30,45,64,.14);
+  text-align:center;
+}
+
+@media (max-width:640px){
+  [data-skin="retro"] .wrap{padding:14px 12px 40px}
+  [data-skin="retro"] .card{padding:14px 14px 16px}
+  [data-skin="retro"] .card-head{margin:-14px -14px 12px;padding:8px 14px}
+  [data-skin="retro"] .disclosure{margin:-14px -14px;padding:9px 14px}
+}

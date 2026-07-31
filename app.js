@@ -15,6 +15,7 @@ const DEFAULTS = {
   login: "",
   university: "",
   theme: "light",
+  skin: "modern",        // "modern" или "retro" — облик интерфейса
   sound: true,
   rotate: true,
   startMinutes: 5,
@@ -79,6 +80,21 @@ function alive(list) {
   return (list || []).filter((x) => x && !x.deleted);
 }
 
+/* удаление с возможностью передумать: промахнуться мимо крестика легко */
+function deleteWithUndo(list, id, label, after) {
+  removeItem(list, id);
+  save();
+  after();
+
+  toast(label + " удалено", "вернуть", () => {
+    const item = list.find((x) => x.id === id);
+    if (item) { item.deleted = false; touch(item); }
+    save();
+    after();
+    toast("Вернулось");
+  });
+}
+
 /* событие для блока «Наблюдения» */
 function logEvent(kind, minutes) {
   if (!Array.isArray(state.events)) state.events = [];
@@ -98,7 +114,7 @@ const today = () => iso(new Date());
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // видна в настройках — сразу понятно, свежие ли файлы залиты
-const BUILD = "v8";
+const BUILD = "v9";
 
 // палитра меток устройств — различимы и на светлой, и на тёмной теме
 const DEVICE_COLORS = ["#46A171", "#7C5CE0", "#D5803B", "#2783DE", "#E56458", "#0FA5A5"];
@@ -179,6 +195,7 @@ function weekIndex() {
 
 function applyTheme() {
   document.documentElement.setAttribute("data-theme", state.theme);
+  document.documentElement.setAttribute("data-skin", state.skin || "modern");
 
   const list = state.theme === "dark" ? ACCENTS_DARK : ACCENTS_LIGHT;
   const root = document.documentElement;
@@ -219,12 +236,31 @@ function blip(up) {
 }
 
 let toastTimer = null;
-function toast(text) {
+
+// второй и третий аргументы добавляют кнопку в тост — нужно для «вернуть»
+function toast(text, actionText, onAction) {
   const el = $("toast");
-  el.textContent = text;
+  el.innerHTML = "";
+
+  const span = document.createElement("span");
+  span.textContent = text;
+  el.appendChild(span);
+
+  if (actionText && typeof onAction === "function") {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "toast-act";
+    btn.textContent = actionText;
+    btn.addEventListener("click", () => {
+      el.classList.add("hidden");
+      onAction();
+    });
+    el.appendChild(btn);
+  }
+
   el.classList.remove("hidden");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add("hidden"), 2600);
+  toastTimer = setTimeout(() => el.classList.add("hidden"), actionText ? 7000 : 2600);
 }
 
 function banner(text) {
@@ -426,6 +462,7 @@ function renderNow() {
       : "Нажми N и запиши первую мысль";
     acts.forEach((id) => { $(id).disabled = true; });
     $("nowHint").textContent = "";
+    document.title = "Сейчас";
     return;
   }
 
@@ -434,10 +471,13 @@ function renderNow() {
   $("nowStep").textContent = task.step ? "Первый шаг: " + task.step : "";
   $("nowHint").textContent = "Можно бросить через " + state.startMinutes +
     " " + plural(state.startMinutes, "минуту", "минуты", "минут") + ". Это разрешено.";
+
+  // текущая задача видна в заголовке вкладки — и в списке вкладок на телефоне
+  document.title = task.text.length > 40 ? task.text.slice(0, 39) + "…" : task.text;
 }
 
 /* ============================================================
-   ТАЙМЕР И ЗАЩИТА ОТ ГИПЕР��ОКУСА
+   ТАЙМЕР И ЗАЩИТА ОТ ГИПЕР����ОКУСА
    ============================================================ */
 
 const RING = 213.6;
@@ -594,6 +634,8 @@ function renderRhythm() {
    ЭТАПЫ — близкая точка вместо далёкой цели
    ============================================================ */
 
+let msExpanded = false;
+
 function renderMilestones() {
   const list = alive(state.milestones).slice().sort((a, b) => a.date.localeCompare(b.date));
   const next = list.find((m) => !m.done);
@@ -643,7 +685,10 @@ function renderMilestones() {
   const ul = $("msList");
   ul.innerHTML = "";
 
-  list.forEach((m) => {
+  // этапов со временем много — показываем три ближайших, остальное под кнопкой
+  const collapsed = list.length > 4 && !msExpanded;
+
+  (collapsed ? list.slice(0, 3) : list).forEach((m) => {
     const li = document.createElement("li");
     if (m.done) li.className = "done";
 
@@ -676,13 +721,28 @@ function renderMilestones() {
     del.innerHTML = "&times;";
     del.setAttribute("aria-label", "Удалить этап");
     del.addEventListener("click", () => {
-      removeItem(state.milestones, m.id);
-      save(); renderMilestones(); renderInsights();
+      deleteWithUndo(state.milestones, m.id, "Этап", () => {
+        renderMilestones(); renderInsights();
+      });
     });
 
     li.append(cb, devDot(m.dev), label, when, del);
     ul.appendChild(li);
   });
+
+  if (list.length > 4) {
+    const li = document.createElement("li");
+    li.className = "ms-more";
+
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "mini";
+    more.textContent = collapsed ? "ещё " + (list.length - 3) : "свернуть";
+    more.addEventListener("click", () => { msExpanded = !msExpanded; renderMilestones(); });
+
+    li.appendChild(more);
+    ul.appendChild(li);
+  }
 }
 
 /* ============================================================
@@ -719,8 +779,7 @@ function renderInbox() {
     del.innerHTML = "&times;";
     del.setAttribute("aria-label", "Удалить");
     del.addEventListener("click", () => {
-      removeItem(state.inbox, item.id);
-      save(); renderInbox();
+      deleteWithUndo(state.inbox, item.id, "Запись", () => renderInbox());
     });
 
     li.append(devDot(item.dev), t, toTask, del);
@@ -732,13 +791,39 @@ function renderInbox() {
    ЗАДАЧИ — список спрятан, чтобы не давил
    ============================================================ */
 
-function addTask(text, step, energy, estimate) {
-  state.tasks.push(touch({
+/* повторяющиеся задачи: рутина не должна зависеть от памяти */
+const REPEAT_DAYS = { day: 1, "3d": 3, week: 7, "2w": 14, month: 30 };
+const REPEAT_NAME = {
+  day: "каждый день", "3d": "раз в три дня", week: "раз в неделю",
+  "2w": "раз в две недели", month: "раз в месяц"
+};
+
+function addTask(text, step, energy, estimate, note, repeat) {
+  const task = touch({
     id: uid(), text: text, step: step || "", energy: energy || "mid",
     estimate: estimate || 0, spent: 0, snoozes: 0,
+    note: note || "", repeat: repeat || "",
     done: false, archived: false, deleted: false,
     snooze: "", created: Date.now(), doneAt: 0, dev: Sync.device()
-  }));
+  });
+
+  state.tasks.push(task);
+  return task;
+}
+
+// закрыли повторяющуюся задачу — сразу создаётся следующая, отложенная на срок
+function respawn(task) {
+  const step = REPEAT_DAYS[task.repeat];
+  if (!step) return;
+
+  const when = new Date();
+  when.setDate(when.getDate() + step);
+
+  const next = addTask(task.text, task.step, task.energy, task.estimate, task.note, task.repeat);
+  next.snooze = iso(when);
+  touch(next);
+
+  toast("Вернётся " + when.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }));
 }
 
 function autoArchive() {
@@ -754,6 +839,7 @@ function completeTask(task) {
   touch(task);
   dayLog(today()).tasks.push(task.text);
   logEvent("done", task.spent || 0);
+  respawn(task);
   save();
 
   blip(true);
@@ -805,21 +891,48 @@ function renderTasks() {
 
     const extra = [];
     if (task.step) extra.push(task.step);
-    if (task.estimate) extra.push("оценка " + task.estimate + " мин");
+    if (task.repeat && REPEAT_NAME[task.repeat]) extra.push(REPEAT_NAME[task.repeat]);
+    if (task.estimate) {
+      // коэффициент искажения времени теперь виден прямо в задаче
+      const k = Stats.factor(alive(state.tasks));
+      extra.push("оценка " + task.estimate + " мин" +
+        (k ? " · по опыту выйдет " + Math.round(task.estimate * k) : ""));
+    }
     if (task.spent) extra.push("вложено " + task.spent + " мин");
     if (task.snooze && task.snooze > t0) extra.push("отложено до " + task.snooze.slice(8) + "." + task.snooze.slice(5, 7));
     sub.appendChild(document.createTextNode(extra.join(" · ")));
 
-    body.append(label, sub);
+    // заметка: всё, что не помещается в «первый шаг», раньше терялось
+    const note = document.createElement("textarea");
+    note.className = "task-note" + (task.note ? "" : " hidden");
+    note.rows = 2;
+    note.placeholder = "Ссылки, обрывки мыслей, где остановился";
+    note.value = task.note || "";
+    note.addEventListener("change", () => {
+      task.note = note.value;
+      touch(task); save();
+    });
+
+    const noteBtn = document.createElement("button");
+    noteBtn.className = "mini"; noteBtn.type = "button";
+    noteBtn.textContent = task.note ? "заметка" : "+ заметка";
+    noteBtn.addEventListener("click", () => {
+      note.classList.toggle("hidden");
+      if (!note.classList.contains("hidden")) note.focus();
+    });
+    sub.appendChild(noteBtn);
+
+    body.append(label, sub, note);
 
     const del = document.createElement("button");
     del.className = "del"; del.type = "button";
     del.innerHTML = "&times;";
     del.setAttribute("aria-label", "Удалить");
     del.addEventListener("click", () => {
-      removeItem(state.tasks, task.id);
-      if (task.id === currentId) pickTask(false);
-      save(); renderTasks(); renderNow(); renderForgotten(); renderInsights();
+      deleteWithUndo(state.tasks, task.id, "Задача", () => {
+        if (task.id === currentId) pickTask(false);
+        renderTasks(); renderNow(); renderForgotten(); renderInsights();
+      });
     });
 
     li.append(cb, devDot(task.dev), body, del);
@@ -846,7 +959,38 @@ function renderTasks() {
       toast("Вернулись");
     });
 
-    box.append(txt, btn);
+    // архив теперь можно открыть и вернуть оттуда одну задачу, а не все сразу
+    const list = document.createElement("ul");
+    list.className = "tasks arch-list hidden";
+
+    arch.forEach((t) => {
+      const li = document.createElement("li");
+
+      const s = document.createElement("span");
+      s.className = "t";
+      s.textContent = t.text;
+
+      const back = document.createElement("button");
+      back.className = "mini"; back.type = "button";
+      back.textContent = "вернуть";
+      back.addEventListener("click", () => {
+        t.archived = false; t.created = Date.now(); touch(t);
+        save(); renderTasks(); renderNow();
+      });
+
+      li.append(devDot(t.dev), s, back);
+      list.appendChild(li);
+    });
+
+    const show = document.createElement("button");
+    show.className = "mini"; show.type = "button";
+    show.textContent = "посмотреть";
+    show.addEventListener("click", () => {
+      const open = !list.classList.toggle("hidden");
+      show.textContent = open ? "скрыть" : "посмотреть";
+    });
+
+    box.append(txt, show, btn, list);
   }
 }
 
@@ -1141,7 +1285,20 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "n" || e.key === "N" || e.key === "т" || e.key === "Т") {
     e.preventDefault();
     openCapture();
+    return;
   }
+
+  // остальные горячие клавиши работают только когда на экране сам дашборд
+  const busy = !$("overlay").classList.contains("hidden") ||
+               !$("captureOverlay").classList.contains("hidden");
+  if (busy) return;
+
+  const hit = (id) => { e.preventDefault(); const b = $(id); if (!b.disabled) b.click(); };
+
+  if (e.code === "Space" || e.key === " ") return hit("btnStart");
+  if ("dDвВ".indexOf(e.key) >= 0) return hit("btnDone");
+  if ("sSыЫ".indexOf(e.key) >= 0) return hit("btnSnooze");
+  if ("oOщЩ".indexOf(e.key) >= 0) return hit("btnOther");
 });
 
 /* --- этапы --- */
@@ -1176,8 +1333,11 @@ $("taskForm").addEventListener("submit", (e) => {
   if (!text) return;
 
   const est = Math.min(600, Math.max(0, parseInt($("tEstimate").value, 10) || 0));
-  addTask(text, $("tStep").value.trim(), $("tEnergy").value, est);
+  addTask(text, $("tStep").value.trim(), $("tEnergy").value, est,
+          $("tNote").value.trim(), $("tRepeat").value);
+
   $("tText").value = ""; $("tStep").value = ""; $("tEstimate").value = "";
+  $("tNote").value = ""; $("tRepeat").value = "";
   save();
 
   if (!currentId) pickTask(false);
@@ -1201,6 +1361,7 @@ $("settingsBtn").addEventListener("click", () => {
   $("fBreak").value = state.breakMinutes;
   $("fSound").checked = state.sound;
   $("fRotate").checked = state.rotate;
+  $("fSkin").value = state.skin || "modern";
 
   // поле токена всегда пустое — сам токен в нём не хранится.
   // Подсказка показывает, есть ли он на самом деле.
@@ -1230,6 +1391,7 @@ $("settingsForm").addEventListener("submit", (e) => {
   state.breakMinutes = Math.min(240, Math.max(20, parseInt($("fBreak").value, 10) || 90));
   state.sound = $("fSound").checked;
   state.rotate = $("fRotate").checked;
+  state.skin = $("fSkin").value;
   state.scalarsUpdatedAt = Date.now();
   save();
 
@@ -1376,6 +1538,76 @@ function renderDevices() {
 
 function redrawLists() {
   renderTasks(); renderMilestones(); renderInbox();
+}
+
+// записи, сделанные до появления меток, можно одним нажатием признать своими
+function claimOld() {
+  const me = Sync.device();
+  let n = 0;
+
+  [state.tasks, state.milestones, state.inbox].forEach((list) => {
+    (list || []).forEach((x) => {
+      if (x && !x.deleted && !x.dev) { x.dev = me; touch(x); n++; }
+    });
+  });
+
+  if (!n) { toast("Записей без метки нет"); return; }
+
+  save(); redrawLists();
+  toast(n + " " + plural(n, "запись помечена", "записи помечены", "записей помечено"));
+}
+
+/* --- копия файлом: единственная страховка, которая ни от чего не зависит --- */
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "dashboard-" + today() + ".json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast("Копия скачана");
+}
+
+function importData(file) {
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    let data;
+    try { data = JSON.parse(reader.result); } catch (err) { data = null; }
+
+    if (!data || typeof data !== "object" || !Array.isArray(data.tasks)) {
+      toast("Это не файл дашборда");
+      return;
+    }
+
+    const n = data.tasks.length;
+    if (!confirm("Заменить всё на этом устройстве содержимым файла? В нём задач: " + n)) return;
+
+    state = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), data);
+    persist();
+    location.reload();
+  };
+
+  reader.onerror = () => toast("Файл не прочитался");
+  reader.readAsText(file);
+}
+
+if ($("expBtn")) $("expBtn").addEventListener("click", exportData);
+if ($("claimBtn")) $("claimBtn").addEventListener("click", claimOld);
+
+if ($("impBtn")) {
+  $("impBtn").addEventListener("click", () => $("impFile").click());
+  $("impFile").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) importData(file);
+    e.target.value = "";
+  });
 }
 
 /* --- статус синхронизации --- */

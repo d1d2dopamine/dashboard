@@ -28,7 +28,7 @@ const Stats = (function () {
   /* ---------- 1. Когда ты реально работаешь ---------- */
   // Гистограмма по часам, скользящее окно в три часа.
   function workHours(events) {
-    if (events.length < 10) return null;
+    if (events.length < 4) return null;
 
     const bins = new Array(24).fill(0);
     events.forEach((e) => {
@@ -59,7 +59,7 @@ const Stats = (function () {
       .filter((t) => t.done && t.estimate > 0 && t.spent > 0)
       .map((t) => t.spent / t.estimate);
 
-    if (pairs.length < 4) return null;
+    if (pairs.length < 2) return null;
 
     const k = median(pairs);
     if (k < 1.15 && k > 0.85) {
@@ -80,7 +80,7 @@ const Stats = (function () {
   /* ---------- 3. Обычная длина захода ---------- */
   function sessionLength(events) {
     const mins = events.filter((e) => e.kind === "session" && e.minutes > 0).map((e) => e.minutes);
-    if (mins.length < 4) return null;
+    if (mins.length < 2) return null;
 
     const m = Math.round(median(mins));
     return {
@@ -119,12 +119,28 @@ const Stats = (function () {
 
   /* ---------- 6. Сколько ещё данных нужно ---------- */
   function progress(events) {
-    const need = 10, have = events.length;
-    if (have >= need) return null;
+    if (!events.length) {
+      return {
+        text: "Наблюдения появятся после первого таймера",
+        note: "Каждый запуск таймера и каждая закрытая задача что-то сюда добавляют"
+      };
+    }
+
+    // сводка за неделю показывается с первого же дня — ждать десяти записей незачем
+    const week = Date.now() - 7 * 86400000;
+    const recent = events.filter((e) => e.t >= week);
+    const minutes = recent.reduce((a, e) => a + (e.minutes || 0), 0);
+    const done = recent.filter((e) => e.kind === "done").length;
+
+    const parts = [];
+    if (minutes) parts.push(minutes + " " + plural(minutes, "минута", "минуты", "минут") + " в фокусе");
+    if (done) parts.push(done + " " + plural(done, "задача закрыта", "задачи закрыто", "задач закрыто"));
 
     return {
-      text: "Наблюдения появятся, когда накопится история",
-      note: have + " из " + need + " записей · каждый таймер и каждая закрытая задача считаются"
+      text: parts.length ? "За неделю: " + parts.join(", ") : "За эту неделю пока пусто",
+      note: events.length < 10
+        ? "Записей всего " + events.length + " — чем больше, тем точнее остальные наблюдения"
+        : "Считается по журналу за последние семь дней"
     };
   }
 

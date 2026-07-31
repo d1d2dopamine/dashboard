@@ -438,3 +438,33 @@ input:focus,select:focus{border-color:var(--accent);outline:none}
 .dev-swatch.on { border-color: var(--text); }
 
 .dev-meta { flex: 0 0 auto; }
+
+/* ---------- v9: заметки, архив, отмена удаления ---------- */
+
+.toast{display:flex;align-items:center;gap:14px}
+.toast-act{
+  border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);
+  color:inherit;font:inherit;font-weight:600;cursor:pointer;
+  padding:4px 12px;border-radius:6px;flex:0 0 auto;
+}
+.toast-act:hover{background:rgba(255,255,255,.24)}
+
+.task-note{
+  display:block;width:100%;margin-top:8px;resize:vertical;
+  font:inherit;font-size:13px;line-height:1.45;color:var(--text);
+  background:var(--soft);border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;
+}
+.task-note:focus{outline:none;border-color:var(--accent);background:var(--canvas)}
+.task-form .task-note{margin-top:10px}
+
+.tasks .sub .mini{margin-left:8px}
+
+.arch-list{margin-top:10px;border-top:1px solid var(--border);padding-top:4px}
+.arch-list li{align-items:center}
+.arch-list .t{color:var(--muted);font-size:14px}
+
+.ms-more{border-top:1px solid var(--border);padding-top:10px}
+.ms-more .mini{padding-left:0}
+
+#tRepeat{flex:0 0 auto}

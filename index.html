@@ -12,6 +12,7 @@
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon.svg">
 <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./retro.css">
 </head>
 <body>
 
@@ -167,8 +168,17 @@
             <option value="high">Надо разгоняться</option>
           </select>
           <input type="number" id="tEstimate" min="1" max="600" placeholder="Оценка, мин" aria-label="Сколько займёт, минут">
+          <select id="tRepeat" aria-label="Повторять">
+            <option value="">без повтора</option>
+            <option value="day">каждый день</option>
+            <option value="3d">раз в три дня</option>
+            <option value="week">раз в неделю</option>
+            <option value="2w">раз в две недели</option>
+            <option value="month">раз в месяц</option>
+          </select>
           <button type="submit" class="btn btn-primary">Добавить</button>
         </div>
+        <textarea id="tNote" class="task-note" rows="2" placeholder="Заметка: ссылки, обрывки мыслей — необязательно"></textarea>
         <p class="muted small" id="estimateHint">Оценка необязательна. Но если ставить — сайт посчитает, во сколько раз ты обычно ошибаешься</p>
       </form>
 
@@ -219,6 +229,7 @@
   <form class="capture" id="captureForm">
     <input type="text" id="captureInput" placeholder="Что в голове?" autocomplete="off">
     <p class="capture-hint">Enter — сохранить · Esc — закрыть</p>
+    <p class="capture-hint">На главном экране: пробел — таймер, D — сделано, S — не сегодня, O — другую</p>
   </form>
 </div>
 
@@ -241,6 +252,13 @@
       <label class="check-field"><input type="checkbox" id="fSound"><span>��вук при завершении задачи</span></label>
       <label class="check-field"><input type="checkbox" id="fRotate"><span>Менять цвет каждую неделю</span></label>
 
+      <label class="field"><span>Облик интерфейса</span>
+        <select id="fSkin">
+          <option value="modern">Современный</option>
+          <option value="retro">Старый, как в 2012-м</option>
+        </select>
+      </label>
+
       <div class="sync-box">
         <div class="sync-line">
           <strong>Устройства</strong>
@@ -248,6 +266,22 @@
         </div>
         <p class="muted small">У каждой задачи, этапа и записи слева точка — того цвета, где её добавили. Имя можно менять.</p>
         <div id="deviceList"></div>
+        <div class="sync-actions">
+          <button type="button" class="btn btn-ghost" id="claimBtn">Пометить старые записи этим устройством</button>
+        </div>
+      </div>
+
+      <div class="sync-box">
+        <div class="sync-line">
+          <strong>Копия файлом</strong>
+          <span class="muted small">на случай всего</span>
+        </div>
+        <p class="muted small">Скачанный файл не зависит ни от браузера, ни от токена, ни от GitHub. Загрузка заменяет всё, что сейчас на этом устройстве.</p>
+        <div class="sync-actions">
+          <button type="button" class="btn" id="expBtn">Скачать копию</button>
+          <button type="button" class="btn btn-ghost" id="impBtn">Загрузить копию</button>
+          <input type="file" id="impFile" accept="application/json,.json" class="hidden">
+        </div>
       </div>
 
       <div class="sync-box">
