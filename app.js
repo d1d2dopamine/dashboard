@@ -113,7 +113,7 @@ const today = () => iso(new Date());
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // видна в настройках — сразу понятно, свежие ли файлы залиты
-const BUILD = "v12";
+const BUILD = "v13";
 
 // даты и часы пишутся на том же языке, что и интерфейс
 const LOC = () => (typeof Lang !== "undefined" ? Lang.locale() : "ru-RU");
@@ -1361,11 +1361,6 @@ $("tasksToggle").addEventListener("click", () => {
   $("tasksToggle").setAttribute("aria-expanded", String(!open));
 });
 
-$("heatToggle").addEventListener("click", () => {
-  const open = $("heatPanel").classList.toggle("hidden");
-  $("heatToggle").setAttribute("aria-expanded", String(!open));
-});
-
 $("taskForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const text = $("tText").value.trim();
@@ -1562,7 +1557,7 @@ function renderDevices() {
       sw.type = "button";
       sw.className = "dev-swatch" + (c === rec.color ? " on" : "");
       sw.style.background = c;
-      sw.setAttribute("aria-label", "Цвет метки");
+      sw.setAttribute("aria-label", "Цвет мет��и");
       sw.addEventListener("click", () => {
         rec.color = c;
         rec.updatedAt = Date.now();
@@ -1798,10 +1793,6 @@ async function boot() {
     renderInsights();
     renderRepos();
     renderHeat();
-    $("source").textContent = "GitHub: " + github.source +
-      (github.exact ? "" : " · ��ез токена видны только последние 90 дней");
-  } else {
-    $("source").textContent = "GitHub не подключён · всё остальное работает без него";
   }
 }
 
